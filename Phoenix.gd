@@ -2,31 +2,67 @@ extends Node
 
 class_name Phoenix
 
-signal on_event(event_name, payload)
+signal on_event(event, payload)
 
 const HEARTBEAT_INTERVAL = 30000
 
 const WRITE_MODE = WebSocketPeer.WRITE_MODE_TEXT
 
+const STATUS = {
+	ok = "ok",
+	timeout = "timeout",
+	error = "error"
+}
+
+const CHANNEL_EVENTS = {
+  close = "phx_close",
+  error = "phx_error",
+  join = "phx_join",
+  reply = "phx_reply",
+  leave = "phx_leave"
+}
+
 const TOPIC_PHOENIX = "phoenix"
-const EVENT_JOIN = "phx_join"
-const EVENT_REPLY = "phx_reply"
 const EVENT_PRESENCE_DIFF = "presence_diff"
 const EVENT_HEARTBEAT = "heartbeat"
 
-var socket = WebSocketClient.new()
-var last_status = -1
-var last_heartbeat_at = 0
-var tried_connection = false
-var connected_at = 0
+# Socket members
+var _socket = WebSocketClient.new()
+var _last_status = -1
+var _last_heartbeat_at = 0
+var _tried_connection = false 
+var _connected_at = 0
+export var is_connected = false setget ,get_is_connected
 
-onready var start_time = OS.get_ticks_msec()
-
+# Channel members
 var _topic
 var _ref = 0
 var _join_ref = null
 var _join_ref_pos = 0
 var _pending_refs = {}
+export var is_channel_joined = false setget ,get_is_channel_joined
+
+#
+# Getters
+#
+
+func get_is_connected() -> bool:
+	return is_connected
+func get_is_channel_joined() -> bool:
+	return is_channel_joined
+
+#
+# Public Interface
+#
+
+func is_online() -> bool:
+	return get_is_connected() and get_is_channel_joined()
+func can_push() -> bool:
+	return is_online()
+	
+#
+# Implementation
+#
 
 func _make_ref() -> String:
 	_ref = _ref + 1
@@ -46,11 +82,17 @@ func _get_pending_ref(ref):
 		return _pending_refs[ref]
 			
 	return null
+	
+func _can_send_message(event):
+	if is_connected:
+		return is_channel_joined or event == CHANNEL_EVENTS.join
+					
+	return false
 
-func _compose_event(event_name, payload={}, topic=null, join_ref=null):
+func _compose_event(event, payload={}, topic=null, join_ref=null):
 	var ref = _make_ref()
 	
-	if event_name == EVENT_HEARTBEAT:
+	if event == EVENT_HEARTBEAT:
 		join_ref = null
 	elif not join_ref:
 		join_ref = _get_join_ref()
@@ -59,7 +101,7 @@ func _compose_event(event_name, payload={}, topic=null, join_ref=null):
 	
 	var composed = {
 		topic = topic,
-		event = event_name,
+		event = event,
 		payload = payload,
 		ref = ref,
 		join_ref = join_ref
@@ -71,95 +113,116 @@ func _compose_event(event_name, payload={}, topic=null, join_ref=null):
 
 func _ready():
 	# Set events
-	socket.connect("connection_established", self, "started")
-	socket.connect("connection_error", self, "error", ["error"])
-	socket.connect("connection_closed", self, "error", ["closed"])
-	socket.connect("data_received", self, "read")
+	_socket.connect("connection_established", self, "started")
+	_socket.connect("connection_error", self, "error", ["error"])
+	_socket.connect("connection_closed", self, "error", ["closed"])
+	_socket.connect("data_received", self, "read")
 	
-	if not tried_connection:
+	if not _tried_connection:
 		start()
 		
 	set_process(true)
 
 func _heartbeat(time):
-	write(to_json(_compose_event(EVENT_HEARTBEAT, {}, TOPIC_PHOENIX)))
-	last_heartbeat_at = time
+	write(_compose_event(EVENT_HEARTBEAT, {}, TOPIC_PHOENIX))
+	_last_heartbeat_at = time
 	
 func _process(delta):
-	var status = socket.get_connection_status()
+	var status = _socket.get_connection_status()
 
-	if status != last_status:
-		last_status = status
-		print("Status: ", status)
-		
-		if(status == 2):
-			write(to_json(_compose_event(EVENT_JOIN, {}, "game:room")))
+	if status != _last_status:
+		_last_status = status
+		print("STATUS CHANGED!")
+				
+		if status == WebSocketClient.CONNECTION_CONNECTED:
+			is_connected = true
+			is_channel_joined = false
+			write(_compose_event(CHANNEL_EVENTS.join, {}, "game:room"))
+		elif status == WebSocketClient.CONNECTION_DISCONNECTED:
+			is_connected = false
+			is_channel_joined = false
+			print("Connection closed")
 			
 	if status == WebSocketClient.CONNECTION_CONNECTED:
 		var current_ticks = OS.get_ticks_msec()		
 		
-		if (current_ticks - last_heartbeat_at >= HEARTBEAT_INTERVAL) and (current_ticks - connected_at >= HEARTBEAT_INTERVAL):
+		if (current_ticks - _last_heartbeat_at >= HEARTBEAT_INTERVAL) and (current_ticks - _connected_at >= HEARTBEAT_INTERVAL):
 			_heartbeat(current_ticks)
 			
 	if status == WebSocketClient.CONNECTION_DISCONNECTED: 
 		return
 
-	socket.poll()
+	_socket.poll()
 
 func start():
 	# Connect to server
 	print("connecting...")
-	socket.verify_ssl = false
-	socket.connect_to_url("ws://localhost:4000/socket/websocket?user_id=1")
+	_socket.verify_ssl = false
+	_socket.connect_to_url("ws://localhost:4000/_socket/web_socket?user_id=1")
 
 func started(protocol):
 	print("success!")
 	print(protocol)
-	socket.get_peer(1).set_write_mode(WRITE_MODE)
-	connected_at = OS.get_ticks_msec()
+	_socket.get_peer(1).set_write_mode(WRITE_MODE)
+	_connected_at = OS.get_ticks_msec()
 
 func error(arg):
     print(": ", arg)
 
 func read(pid=1):
-	var packet = socket.get_peer(1).get_packet()
+	var packet = _socket.get_peer(1).get_packet()
 	var json = JSON.parse(packet.get_string_from_utf8())
 	print("Received JSON, %s" % [json.result])
 		
 	if json.result.has("event"):
-		match json.result["event"]:
-			EVENT_REPLY:
-				var ref = json.result["ref"]
-				
+		var ref = json.result.ref
+		
+		match json.result.event:
+			CHANNEL_EVENTS.reply:								
 				var pending_ref = _get_pending_ref(ref)
 				_parse_pending_ref(pending_ref, json.result)
+			
+			CHANNEL_EVENTS.error:
+				var pending_ref = _get_pending_ref(ref)
+				if pending_ref and pending_ref.event == CHANNEL_EVENTS.join:
+					print("TODO: phx_leave")
+				else:
+					print("TODO: handle error")
+			_:
+				if ref == null:
+					emit_event(json.result.event, json.result.payload)
 
-func write(data):
-	print("gonna send ", data, data.to_utf8())
-    # Send message
-	socket.get_peer(1).put_packet(data.to_utf8())
+func write(message):
+	if _can_send_message(message.event):
+		print("gonna send ", message)
+		_socket.get_peer(1).put_packet(to_json(message).to_utf8())
 
 func _parse_pending_ref(pending_ref, result):
 	if not pending_ref: return
 	var should_emit = true
+	var should_erase_ref = true
 	
 	match pending_ref.event:
-		EVENT_JOIN:
+		CHANNEL_EVENTS.join:
 			should_emit = false
-			_topic = result["topic"]
+			should_erase_ref = false
+			
+			is_channel_joined = true
+			_topic = result.topic
 			print("JOINED TOPIC ", _topic)
 		
 		EVENT_HEARTBEAT:
 			should_emit = false
-						
-			if result.payload.has("status"):
-				if result.payload.status == "ok":
-					print("connection OK")
-				else:
-					print("heartbeat failed, now what?")
+
+			if result.payload.has("status") and result.payload.status != STATUS.ok:
+				print("TODO: heartbeat failed, now what?")
 					
-	if should_emit:	
-		emit_signal("on_event", result["event"], result["payload"])
-		print("Emiting event", result)	
+	if should_emit:
+		emit_event(result.event, result.payload)
 	
-	_pending_refs.erase(pending_ref.ref)
+	if should_erase_ref:
+		_pending_refs.erase(pending_ref.ref)
+
+func emit_event(event, payload):
+	print("Emiting event", event, payload)	
+	emit_signal("on_event", event, payload)	

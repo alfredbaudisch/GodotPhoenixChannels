@@ -9,4 +9,4 @@ func _ready():
 	get_parent().call_deferred("add_child", phoenix)
 
 func _on_channel_event(event, payload):
-	print("received phoenix event: ", event, ", ", payload)
+	print("received phoenix broadcast: ", event, ", ", payload)
