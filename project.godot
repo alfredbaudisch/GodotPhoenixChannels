@@ -13,9 +13,21 @@ _global_script_classes=[ {
 "class": "Phoenix",
 "language": "GDScript",
 "path": "res://Phoenix.gd"
+}, {
+"base": "Node",
+"class": "PhoenixSocket",
+"language": "GDScript",
+"path": "res://Phoenix/Scripts/Socket.gd"
+}, {
+"base": "Node",
+"class": "PhoenixUtils",
+"language": "GDScript",
+"path": "res://Phoenix/Scripts/Utils.gd"
 } ]
 _global_script_class_icons={
-"Phoenix": ""
+"Phoenix": "",
+"PhoenixSocket": "",
+"PhoenixUtils": ""
 }
 
 [application]

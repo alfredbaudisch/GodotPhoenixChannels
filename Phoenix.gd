@@ -48,6 +48,7 @@ export var is_channel_joined = false setget ,get_is_channel_joined
 
 func get_is_connected() -> bool:
 	return is_connected
+
 func get_is_channel_joined() -> bool:
 	return is_channel_joined
 
@@ -57,6 +58,7 @@ func get_is_channel_joined() -> bool:
 
 func is_online() -> bool:
 	return get_is_connected() and get_is_channel_joined()
+	
 func can_push() -> bool:
 	return is_online()
 	
@@ -158,7 +160,7 @@ func start():
 	# Connect to server
 	print("connecting...")
 	_socket.verify_ssl = false
-	_socket.connect_to_url("ws://localhost:4000/_socket/web_socket?user_id=1")
+	_socket.connect_to_url("ws://localhost:4000/socket/websocket?user_id=1")
 
 func started(protocol):
 	print("success!")
