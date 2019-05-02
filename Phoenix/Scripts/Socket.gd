@@ -2,24 +2,28 @@ extends Node
 
 class_name PhoenixSocket
 
-const DEFAULT_TIMEOUT = 10000
-const DEFAULT_HEARTBEAT_INTERVAL = 30000
-const DEFAULT_BASE_ENDPOINT = "ws://localhost:4000/socket"
-const DEFAULT_RECONNECT_AFTER = [1000, 2000, 5000, 10000]
-const TRANSPORT = "websocket"
+#
+# Socket Members
+#
 
-const WRITE_MODE = WebSocketPeer.WRITE_MODE_TEXT
+const DEFAULT_TIMEOUT := 10000
+const DEFAULT_HEARTBEAT_INTERVAL := 30000
+const DEFAULT_BASE_ENDPOINT := "ws://localhost:4000/socket"
+const DEFAULT_RECONNECT_AFTER := [1000, 2000, 5000, 10000]
+const TRANSPORT := "websocket"
 
-const TOPIC_PHOENIX = "phoenix"
-const EVENT_HEARTBEAT = "heartbeat"
+const WRITE_MODE := WebSocketPeer.WRITE_MODE_TEXT
+
+const TOPIC_PHOENIX := "phoenix"
+const EVENT_HEARTBEAT := "heartbeat"
 
 signal on_open(params)
 signal on_error(data)
 signal on_close()
 signal on_connecting(is_connecting)
 
-# Socket members
 var _socket := WebSocketClient.new()
+var _channels := []
 var _settings := {}
 var _is_https := false
 var _endpoint_url := ""
@@ -37,18 +41,84 @@ var _last_reconnect_try_at := -1
 var _should_reconnect := false
 var _reconnect_after_pos := 0
 
-export var is_connected = false setget ,get_is_connected
-export var is_connecting = false setget ,get_is_connecting
+# TODO: refactor as SocketStates, just like ChannelStates
+export var is_connected := false setget ,get_is_connected
+export var is_connecting := false setget ,get_is_connecting
 
 # Events
 var _ref := 0
 var _pending_refs := {}
 
-# Channel members
-var _channels := []
+#
+# Channel Members
+#
+
+const CHANNEL_EVENTS := {
+	close = "phx_close",
+	error = "phx_error",
+	join = "phx_join",
+	reply = "phx_reply",
+	leave = "phx_leave"
+}
+enum ChannelStates {CLOSED, ERRORED, JOINED, JOINING, LEAVING}
 
 #
-# Godot lifecycle
+# Channel
+#
+
+class PhoenixChannel:
+	signal on_join_result(event, payload)
+	signal on_event(event, payload)
+	signal on_error(error)
+	signal on_close(params)	
+	
+	var _state = ChannelStates.CLOSED
+	var _topic := ""
+	var _params := {}
+	var _joined_once := false
+	
+	func _init(topic, params : Dictionary = {}):
+		_topic = topic
+		_params = params
+	
+	#
+	# Interface
+	#
+	
+	func is_closed() -> bool: return _state == ChannelStates.CLOSED
+	func is_errored() -> bool: return _state == ChannelStates.ERRORED
+	func is_joined() -> bool: return _state == ChannelStates.JOINED
+	func is_joining() -> bool: return _state == ChannelStates.JOINING
+	func is_leaving() -> bool: return _state == ChannelStates.LEAVING
+	
+	func join():
+		if not _joined_once:
+			_rejoin()
+	
+	func close(params):
+		_state = ChannelStates.CLOSED
+		emit_signal("on_close", params)
+		
+	#
+	# Implementation
+	#
+	
+	func _event(event, payload):
+		emit_signal("on_event", payload)		
+	
+	func _error(error):
+		_state = ChannelStates.ERRORED
+		emit_signal("on_error", error)
+		
+	func _joined(event : String, payload : Dictionary = {}):
+		_state = ChannelStates.JOINED
+		emit_signal("on_join_result", event, payload)
+		
+	func _rejoin():
+		_state = ChannelStates.JOINING
+	
+#
+# Godot lifecycle for PhoenixSocket
 #
 
 func _init(endpoint, opts = {}):
@@ -72,9 +142,6 @@ func _ready():
 	set_process(true)
 	
 func _process(delta):
-	if _connected_at <= 0:
-		pass
-		
 	var status = _socket.get_connection_status()
 
 	if status != _last_status:
@@ -127,6 +194,11 @@ func get_is_connected() -> bool:
 	
 func get_is_connecting() -> bool:
 	return is_connecting
+	
+func channel(topic, params : Dictionary = {}) -> PhoenixChannel:
+	var channel := PhoenixChannel.new(topic, params)
+	_channels.push_back(channel)
+	return channel
 
 #
 # Implementation 

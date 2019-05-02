@@ -1,6 +1,6 @@
 extends Node
 
-class_name Phoenix
+class_name PhoenixBase
 
 signal on_event(event, payload)
 
