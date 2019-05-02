@@ -10,7 +10,8 @@ func _ready():
 	#phoenix.connect("on_event", self, "_on_channel_event")
 	phoenix.connect("on_open", self, "_on_Phoenix_socket_open")
 	phoenix.connect("on_close", self, "_on_Phoenix_socket_close")
-	phoenix.connect("on_error", self, "_on_Phoenix_socket_error")	
+	phoenix.connect("on_error", self, "_on_Phoenix_socket_error")
+	phoenix.connect("on_connecting", self, "_on_Phoenix_socket_connecting")
 	
 	get_parent().call_deferred("add_child", phoenix, true)
 	phoenix.connect_socket()	
@@ -26,6 +27,9 @@ func _on_Phoenix_socket_error(payload):
 	
 func _on_channel_event(event, payload):
 	print("received phoenix broadcast: ", event, ", ", payload)
+	
+func _on_Phoenix_socket_connecting(is_connecting):
+	print("_on_Phoenix_socket_connecting: ", " ", is_connecting)
 
 func _on_Button_pressed():
 	phoenix.disconnect_socket()

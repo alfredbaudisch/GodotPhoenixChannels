@@ -16,6 +16,7 @@ const EVENT_HEARTBEAT = "heartbeat"
 signal on_open(params)
 signal on_error(data)
 signal on_close()
+signal on_connecting(is_connecting)
 
 # Socket members
 var _socket := WebSocketClient.new()
@@ -37,6 +38,7 @@ var _should_reconnect := false
 var _reconnect_after_pos := 0
 
 export var is_connected = false setget ,get_is_connected
+export var is_connecting = false setget ,get_is_connecting
 
 # Events
 var _ref := 0
@@ -76,12 +78,19 @@ func _process(delta):
 	var status = _socket.get_connection_status()
 
 	if status != _last_status:
-		_last_status = status			
+		_last_status = status
 	
 		if status == WebSocketClient.CONNECTION_DISCONNECTED:
 			is_connected = false
 			_last_connected_at = _connected_at
 			_connected_at = -1
+		
+		if status == WebSocketClient.CONNECTION_CONNECTING:
+			emit_signal("on_connecting", true)
+			is_connecting = true
+		else:
+			if is_connecting: emit_signal("on_connecting", false)
+			is_connecting = false
 			
 	if status == WebSocketClient.CONNECTION_CONNECTED:
 		var current_ticks = OS.get_ticks_msec()		
@@ -115,6 +124,9 @@ func disconnect_socket():
 
 func get_is_connected() -> bool:
 	return is_connected
+	
+func get_is_connecting() -> bool:
+	return is_connecting
 
 #
 # Implementation 
@@ -220,7 +232,7 @@ func _on_socket_closed(clean):
 		_should_reconnect = true
 	
 	var payload = {
-		requested = _requested_disconnect,
+		was_requested = _requested_disconnect,
 		will_reconnect = not _requested_disconnect
 	}
 	print("_on_socket_closed: ", payload)
