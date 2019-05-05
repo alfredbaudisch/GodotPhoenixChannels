@@ -33,7 +33,7 @@ Most of the features are already implemented, including Socket reconnection and 
 
 **ATTENTION**: Still under heavy development - the examples are still not finished.
 
-For examples see the [Demo][./Demo] folder.
+For examples see the [Demo](./Demo) folder.
 
 ## Example
 ```gdscript
