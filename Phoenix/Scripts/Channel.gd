@@ -2,6 +2,8 @@ extends Node
 
 class_name PhoenixChannel
 
+const DEFAULT_REJOIN_AFTER := [1, 2, 5, 10]
+
 const TOPIC_PHOENIX := "phoenix"
 const STATUS = {
 	ok = "ok",
@@ -36,6 +38,7 @@ var _pending_refs := {}
 
 var _rejoin_timer : Timer
 var _should_rejoin_until_connected := false
+var _rejoin_pos := -1
 
 func _init(socket, topic, params : Dictionary = {}):
 	assert(topic != TOPIC_PHOENIX)
@@ -45,8 +48,8 @@ func _init(socket, topic, params : Dictionary = {}):
 	
 	_rejoin_timer = Timer.new()
 	_rejoin_timer.set_autostart(false)
-	_rejoin_timer.set_wait_time(1)
 	_rejoin_timer.connect("timeout", self, "_on_Timer_timeout")
+	add_child(_rejoin_timer)
 
 #
 # Interface
@@ -68,7 +71,7 @@ func close(params, should_rejoin := false):
 	emit_signal("on_close", params)
 	
 	if should_rejoin:
-		_rejoin_timer.start()
+		_start_rejoin()
 		
 func push(event : String, payload : Dictionary = {}) -> bool:
 	if not can_push(event):
@@ -80,7 +83,7 @@ func push(event : String, payload : Dictionary = {}) -> bool:
 	_pending_refs[ref] = event
 	_socket.push(_socket.compose_message(event, payload, _topic, ref, _join_ref))
 	return true
-	
+
 func can_push(event : String) -> bool:
 	return _socket.can_push(event) and is_joined()
 	
@@ -106,9 +109,10 @@ func trigger(message : PhoenixMessage):
 		
 		if _state == ChannelStates.JOINED:
 			_joined_once = true
+			_rejoin_pos = -1
 		else:
 			_joined_once = false
-			_socket.rejoin_channel()
+			_start_rejoin()
 			
 		emit_signal("on_join_result", status, message.get_response())
 		
@@ -144,6 +148,17 @@ func _error(error):
 func _joined(event : String, payload : Dictionary = {}):
 	_state = ChannelStates.JOINED
 	emit_signal("on_join_result", event, payload)
+	
+func _start_rejoin():
+	if _rejoin_pos < DEFAULT_REJOIN_AFTER.size() - 1:
+		_rejoin_pos += 1
+		
+	_rejoin_timer.set_wait_time(DEFAULT_REJOIN_AFTER[_rejoin_pos])
+	
+	if _rejoin_timer.is_stopped():
+		_rejoin_timer.start()
+
+	_should_rejoin_until_connected = true
 	
 func _rejoin():
 	if _state == ChannelStates.JOINING or _state == ChannelStates.JOINED:
