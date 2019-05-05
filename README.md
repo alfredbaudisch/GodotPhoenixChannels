@@ -4,6 +4,8 @@ GodotPhoenixChannels is a GDScript and [Godot Engine](https://godotengine.org) i
 
 Before diving in, if you want to see some crazy numbers about the scalability of Phoenix, check [The Road to 2 Million Websocket Connections in Phoenix](https://phoenixframework.org/blog/the-road-to-2-million-websocket-connections) and [How Discord Scaled Elixir to 5,000,000 Concurrent Users](https://blog.discordapp.com/scaling-elixir-f9b8e1e7c29b).
 
+**ATTENTION: Still under heavy development - expect it to be fully usable by around 15th/May/19.**
+
 ## What is Elixir?
 [Elixir](https://elixir-lang.org/) is a dynamic, functional language designed for building scalable and maintainable applications.
 
