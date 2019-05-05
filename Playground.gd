@@ -1,7 +1,7 @@
 extends Node
 
 var phoenix : PhoenixSocket
-var channel
+var channel : PhoenixChannel
 
 func _ready():
 	phoenix = PhoenixSocket.new("ws://localhost:4000/socket", {
@@ -31,8 +31,8 @@ func _on_Phoenix_socket_close(payload):
 func _on_Phoenix_socket_error(payload):
 	print("_on_Phoenix_socket_error: ", " ", payload)
 	
-func _on_channel_event(event, payload):
-	print("_on_channel_event:  ", event, ", ", payload)
+func _on_channel_event(event, payload, status):
+	print("_on_channel_event:  ", event, ", ", status, ", ", payload)
 	
 func _on_channel_join_result(status, result):
 	print("_on_channel_join_result:  ", status, result)
@@ -45,3 +45,9 @@ func _on_Button_pressed():
 	
 func _on_Button2_pressed():
 	phoenix.connect_socket()	
+
+func _on_Button3_pressed():
+	channel.push("hit", {error = false})
+
+func _on_Button4_pressed():
+	channel.push("hit", {error = true})
