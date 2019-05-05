@@ -2,7 +2,7 @@
 
 GodotPhoenixChannels is a GDScript and [Godot Engine](https://godotengine.org) implementation for the Channels API of the [Phoenix Framework](http://www.phoenixframework.org/). It enables Godot projects and games to connect to Phoenix Channels to leverage the connected massive real-time capabilities of Elixir and Phoenix backends.
 
-Before diving in, if you want to see some crazy numbers about the scalability of Phoenix, check [The Road to 2 Million Websocket Connections in Phoenix)[https://phoenixframework.org/blog/the-road-to-2-million-websocket-connections] and [How Discord Scaled Elixir to 5,000,000 Concurrent Users](https://blog.discordapp.com/scaling-elixir-f9b8e1e7c29b).
+Before diving in, if you want to see some crazy numbers about the scalability of Phoenix, check [The Road to 2 Million Websocket Connections in Phoenix)(https://phoenixframework.org/blog/the-road-to-2-million-websocket-connections) and [How Discord Scaled Elixir to 5,000,000 Concurrent Users](https://blog.discordapp.com/scaling-elixir-f9b8e1e7c29b).
 
 ## What is Elixir?
 [Elixir](https://elixir-lang.org/) is a dynamic, functional language designed for building scalable and maintainable applications.
