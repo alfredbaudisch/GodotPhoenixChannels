@@ -14,8 +14,6 @@ Elixir leverages the Erlang VM, known for running low-latency, distributed and f
 ## What is Phoenix?
 [Phoenix](https://phoenixframework.org/) is a web and real-time framework built with Elixir. Phoenix leverages the Erlang VM ability to handle millions of connections alongside Elixir's beautiful syntax and productive tooling for building fault-tolerant systems.
 
-Its primary purpose is to ease development of real time messaging apps for Android using an Elixir/Phoenix backend. For more about the Elixir language and the massively scalable and reliable systems you can build with Phoenix, see http://elixir-lang.org and http://www.phoenixframework.org.
-
 ### What are Phoenix Channels?
 [Channels](https://hexdocs.pm/phoenix/channels.html) are an exciting part of Phoenix that enable soft real-time communication with and between millions of connected clients. Some possible use cases include:
 
