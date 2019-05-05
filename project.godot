@@ -39,7 +39,7 @@ _global_script_class_icons={
 [application]
 
 config/name="Phoenix Channels"
-run/main_scene="res://Node.tscn"
+run/main_scene="res://Demo/Node.tscn"
 config/icon="res://icon.png"
 
 [rendering]
