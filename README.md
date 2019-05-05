@@ -31,15 +31,19 @@ This library tries to follow the same design patterns of the official [Phoenix J
 
 Most of the features are already implemented, including Socket reconnection and Channel rejoin timers (similarly to the JS library), but there are some key items still missing. See the [issues](https://github.com/alfredbaudisch/GodotPhoenixChannels/issues).
 
-# Example Usage
+# Examples
 
-## Example Project
+## Example Godot Project
 
 **ATTENTION**: Still under heavy development - the examples are still not finished.
 
 For examples see the [Demo](./Demo) folder.
 
-## Example
+## Example Elixir Project
+
+TODO.
+
+## Example Usage
 ```gdscript
 var phoenix : PhoenixSocket
 var channel : PhoenixChannel
@@ -101,3 +105,9 @@ channel.connect("on_event", self, "_on_Channel_event")
 func _on_Channel_event(event, payload, status):
 	print("_on_channel_event:  ", event, ", ", status, ", ", payload)
 ```
+
+## Additional Facts about Elixir
+
+As it was shown above, Elixir leverages the [Erlang VM](https://en.wikipedia.org/wiki/Erlang_(programming_language)), which itself is a programming language used to build massively scalable soft real-time systems with requirements on high availability. Some of its uses are in telecoms, banking, e-commerce, computer telephony and instant messaging. Erlang's runtime system has built-in support for concurrency, distribution and fault tolerance.
+
+Erlang is some 30 years old, built by Ericsson. To give you some context: Ericsson has 45% of the mobile satellite infrastructure in the world. If you are using data in your mobile phone you are certainly in some stage of the day using an equipment that uses Erlang ([Source](https://www.youtube.com/watch?v=Zf51VOjIVCQ)).
