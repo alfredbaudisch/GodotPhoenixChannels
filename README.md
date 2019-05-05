@@ -23,7 +23,7 @@ Its primary purpose is to ease development of real time messaging apps for Andro
 
 ## Implementation
 
-This library tries to follow the same design patterns of the official [Phoenix JavaScript client](https://hexdocs.pm/phoenix/js/), but important changes had to be made regarding events, in order to accommodate to GDScript.
+This library tries to follow the same design patterns of the official [Phoenix JavaScript client](https://hexdocs.pm/phoenix/js/), but important changes had to be made regarding events, in order to accommodate to GDScript. Godot's [WebSocketClient](https://docs.godotengine.org/en/3.1/classes/class_websocketclient.html) is used as the transport.
 
 Most of the features are already implemented, including Socket reconnection and Channel rejoin timers (similarly to the JS library), but there are some key items still missing. See the [issues](https://github.com/alfredbaudisch/GodotPhoenixChannels/issues).
 
