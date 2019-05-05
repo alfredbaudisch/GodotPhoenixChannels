@@ -1,6 +1,7 @@
 extends Node
 
 var phoenix : PhoenixSocket
+var channel
 
 func _ready():
 	phoenix = PhoenixSocket.new("ws://localhost:4000/socket", {
@@ -13,10 +14,13 @@ func _ready():
 	phoenix.connect("on_error", self, "_on_Phoenix_socket_error")
 	phoenix.connect("on_connecting", self, "_on_Phoenix_socket_connecting")
 	
+	channel = phoenix.channel("game:abc")
+	
 	get_parent().call_deferred("add_child", phoenix, true)
-	phoenix.connect_socket()	
+	phoenix.connect_socket()
 
 func _on_Phoenix_socket_open(payload):
+	channel.join()
 	print("_on_Phoenix_socket_open: ", " ", payload)
 	
 func _on_Phoenix_socket_close(payload):
