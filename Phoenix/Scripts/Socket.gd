@@ -15,8 +15,15 @@ const TRANSPORT := "websocket"
 const WRITE_MODE := WebSocketPeer.WRITE_MODE_TEXT
 
 const GLOBAL_JOIN_REF := ""
+const NO_REPLY_REF := "-1"
+
 const TOPIC_PHOENIX := "phoenix"
 const EVENT_HEARTBEAT := "heartbeat"
+const STATUS = {
+	ok = "ok",
+	error = "error",
+	timeout = "timeout"
+}
 
 signal on_open(params)
 signal on_error(data)
@@ -46,7 +53,7 @@ export var is_connecting := false setget ,get_is_connecting
 
 # Events
 var _ref := 0
-var _pending_refs := {}
+var _pending_messages := {}
 
 #
 # Channel Members
@@ -61,6 +68,10 @@ const CHANNEL_EVENTS := {
 }
 enum ChannelStates {CLOSED, ERRORED, JOINED, JOINING, LEAVING}
 
+const PRESENCE_EVENTS := {
+	diff = "presence_diff"
+}
+
 #
 # Channel
 #
@@ -68,20 +79,36 @@ enum ChannelStates {CLOSED, ERRORED, JOINED, JOINING, LEAVING}
 class PhoenixMessage:
 	var _message : Dictionary = {} setget ,to_dictionary
 	
-	func _init(topic : String, event : String, ref : String, join_ref : String = GLOBAL_JOIN_REF, payload : Dictionary = {}):
+	func _init(topic : String, event : String, ref : String = NO_REPLY_REF, join_ref : String = GLOBAL_JOIN_REF, payload : Dictionary = {}):
 		var final_join_ref = join_ref if join_ref != GLOBAL_JOIN_REF else null
+		var final_ref = ref if ref != NO_REPLY_REF else null
 		
 		_message = {
 			topic = topic,
 			event = event,
 			payload = payload,
-			ref = ref,
+			ref = final_ref,
 			join_ref = final_join_ref
 		}
 		
 	static func from_dictionary(from : Dictionary = {}) -> PhoenixMessage:
-		return PhoenixMessage.new(from.topic, from.event, from.ref, from.join_ref, from.payload)
+		var join_ref = from.join_ref if from.has("join_ref") else GLOBAL_JOIN_REF
+		var ref = from.ref if from.ref else NO_REPLY_REF
 		
+		return PhoenixMessage.new(from.topic, from.event, ref, join_ref, from.payload)
+	
+	func get_topic() -> String: return _message.topic
+	func get_event() -> String: return _message.event
+	func get_payload() -> Dictionary: return _message.payload
+	func get_ref() -> String: return _message.ref
+	func get_join_ref() -> String: return _message.join_ref
+	
+	func get_response():
+		if _message.payload.has("response"):
+			return _message.payload.response
+			
+		return null
+	
 	func to_dictionary() -> Dictionary:
 		return _message
 
@@ -99,6 +126,7 @@ class PhoenixChannel:
 	var _join_ref := ""
 	
 	func _init(socket, topic, params : Dictionary = {}):
+		assert(topic != TOPIC_PHOENIX)
 		_socket = socket
 		_topic = topic
 		_params = params
@@ -123,6 +151,35 @@ class PhoenixChannel:
 		
 	func can_push() -> bool:
 		return _socket.can_push() and is_joined()
+		
+	func is_member(topic, join_ref) -> bool:
+		if topic != _topic:
+			return false
+			
+		var is_lifecycle_event = (topic == CHANNEL_EVENTS.close or  topic == CHANNEL_EVENTS.error or 
+		topic == CHANNEL_EVENTS.join or topic == CHANNEL_EVENTS.reply or topic == CHANNEL_EVENTS.leave)
+		
+		if(join_ref and is_lifecycle_event and join_ref != _join_ref):
+			return false
+		
+		return true
+				
+	func trigger(message : PhoenixMessage):
+		var status : String = STATUS.ok
+		if message.get_payload().has("status"):
+			status = message.get_payload().status			
+		
+		if message.get_ref() == _join_ref:			
+			_state = ChannelStates.JOINED if status == STATUS.ok else ChannelStates.ERRORED
+			_joined_once = _state == ChannelStates.JOINED
+			emit_signal("on_join_result", status, message.get_response())
+			
+		else:
+			# TODO: implement presence
+			if message.get_event() == PRESENCE_EVENTS.diff:
+				pass
+			else:
+				emit_signal("on_event", message.get_event(), message.get_payload())
 		
 	#
 	# Implementation
@@ -227,6 +284,10 @@ func get_is_connected() -> bool:
 func get_is_connecting() -> bool:
 	return is_connecting
 	
+func can_push(event) -> bool:
+	# TODO: do better validation? I.e. do not allow sending message to a topic if a channel is not joined in that topic
+	return is_connected
+	
 func channel(topic, params : Dictionary = {}) -> PhoenixChannel:
 	var channel := PhoenixChannel.new(self, topic, params)
 	_channels.push_back(channel)
@@ -239,16 +300,13 @@ func compose_message(event : String, payload := {}, topic := TOPIC_PHOENIX, ref 
 	ref = ref if ref != "" else make_ref()
 	topic = topic if topic else TOPIC_PHOENIX
 	
-	var composed = PhoenixMessage.new(topic, event, ref, join_ref, payload)
-	
-	_pending_refs[ref] = composed
-		
-	return composed
+	return PhoenixMessage.new(topic, event, ref, join_ref, payload)
 	
 func push(message : PhoenixMessage):
 	var dict = message.to_dictionary()
-	print(to_json(dict))
-	if can_push(dict.event):		
+	
+	if can_push(dict.event):	
+		_pending_messages[dict.ref] = message
 		_socket.get_peer(1).put_packet(to_json(dict).to_utf8())		
 		
 func make_ref() -> String:
@@ -281,15 +339,43 @@ func _retry_reconnect(current_time):
 					_reconnect_after_pos += 1
 					
 				connect_socket()
-
-func can_push(event) -> bool:
-	# TODO: do better validation? I.e. do not allow sending message to a topic if a channel is not joined in that topic
-	return is_connected
 	
 func _heartbeat(time):
 	push(compose_message(EVENT_HEARTBEAT, {}, TOPIC_PHOENIX))
 	_last_heartbeat_at = time
+	
+func _get_pending_ref(ref):	
+	if _pending_messages.has(ref):
+		return _pending_messages[ref]
+			
+	return null
+	
+func _parse_pending_ref(pending_ref, result):
+	if not pending_ref: return
+	var should_emit = true
+	var should_erase_ref = true
+	
+	var message = pending_ref.to_dictionary()
+	
+	match message.event:
+		CHANNEL_EVENTS.join:
+			should_emit = false
+		
+		EVENT_HEARTBEAT:
+			should_emit = false
 
+			if result.payload.has("status") and result.payload.status != STATUS.ok:
+				print("TODO: heartbeat failed, now what?")
+					
+#	if should_emit:
+#		emit_event(result.event, result.payload)
+	
+	if should_erase_ref:
+		print("GONNA DELETE REF ", message)
+		_pending_messages.erase(message.ref)
+
+func _broadcast_message(message : PhoenixMessage):
+	pass
 #
 # Listeners
 #
@@ -324,4 +410,35 @@ func _on_socket_closed(clean):
 	emit_signal("on_close", payload)
 	
 func _on_socket_data_received(pid := 1):
-    print("_on_socket_data_received")
+	var packet = _socket.get_peer(1).get_packet()
+	var json = JSON.parse(packet.get_string_from_utf8())
+	print("_on_socket_data_received, %s" % [json.result])
+	
+	if json.result.has("event"):
+		var result = json.result
+		var message = PhoenixMessage.from_dictionary(json.result)
+		var ref = message.get_ref()
+		
+		if message.get_topic() == TOPIC_PHOENIX:
+			pass
+		else:
+			for channel in _channels:
+				if channel.is_member(message.get_topic(), message.get_join_ref()):
+					channel.trigger(message)
+		
+#		match message.get_event():
+#			CHANNEL_EVENTS.reply:								
+#				var pending_ref = _get_pending_ref(ref)
+#				_parse_pending_ref(pending_ref, json.result)
+#
+#			CHANNEL_EVENTS.error:
+#				var pending_ref = _get_pending_ref(ref)
+#				if pending_ref and pending_ref.event == CHANNEL_EVENTS.join:
+#					print("TODO: phx_leave")
+#				else:
+#					print("TODO: handle error")
+#
+#			_:
+#				print("POSSIBLE BROADCAST: ", message)
+#				if ref == null:
+#					_broadcast_message(message)

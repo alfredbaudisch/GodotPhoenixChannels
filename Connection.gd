@@ -15,6 +15,8 @@ func _ready():
 	phoenix.connect("on_connecting", self, "_on_Phoenix_socket_connecting")
 	
 	channel = phoenix.channel("game:abc")
+	channel.connect("on_event", self, "_on_channel_event")
+	channel.connect("on_join_result", self, "_on_channel_join_result")
 	
 	get_parent().call_deferred("add_child", phoenix, true)
 	phoenix.connect_socket()
@@ -30,7 +32,10 @@ func _on_Phoenix_socket_error(payload):
 	print("_on_Phoenix_socket_error: ", " ", payload)
 	
 func _on_channel_event(event, payload):
-	print("received phoenix broadcast: ", event, ", ", payload)
+	print("_on_channel_event:  ", event, ", ", payload)
+	
+func _on_channel_join_result(status, result):
+	print("_on_channel_join_result:  ", status, result)
 	
 func _on_Phoenix_socket_connecting(is_connecting):
 	print("_on_Phoenix_socket_connecting: ", " ", is_connecting)
