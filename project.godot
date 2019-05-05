@@ -10,9 +10,14 @@ config_version=4
 
 _global_script_classes=[ {
 "base": "Node",
-"class": "PhoenixBase",
+"class": "PhoenixChannel",
 "language": "GDScript",
-"path": "res://Phoenix.gd"
+"path": "res://Phoenix/Scripts/Channel.gd"
+}, {
+"base": "Node",
+"class": "PhoenixMessage",
+"language": "GDScript",
+"path": "res://Phoenix/Scripts/Message.gd"
 }, {
 "base": "Node",
 "class": "PhoenixSocket",
@@ -25,7 +30,8 @@ _global_script_classes=[ {
 "path": "res://Phoenix/Scripts/Utils.gd"
 } ]
 _global_script_class_icons={
-"PhoenixBase": "",
+"PhoenixChannel": "",
+"PhoenixMessage": "",
 "PhoenixSocket": "",
 "PhoenixUtils": ""
 }

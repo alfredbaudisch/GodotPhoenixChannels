@@ -28,3 +28,8 @@ static func get_key_or_default(values : Dictionary, key : String, default):
 		return values[key]
 			
 	return default
+	
+static func get_message_from_dictionary(from : Dictionary = {}) -> PhoenixMessage:
+	var join_ref = from.join_ref if from.has("join_ref") else PhoenixMessage.GLOBAL_JOIN_REF
+	var ref = from.ref if from.ref else PhoenixMessage.NO_REPLY_REF	
+	return PhoenixMessage.new(from.topic, from.event, ref, join_ref, from.payload)
