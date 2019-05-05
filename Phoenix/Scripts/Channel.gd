@@ -35,11 +35,19 @@ var _joined_once := false
 var _socket
 var _join_ref := ""
 
+var _rejoin_timer : Timer
+var _should_rejoin_until_connected := false
+
 func _init(socket, topic, params : Dictionary = {}):
 	assert(topic != TOPIC_PHOENIX)
 	_socket = socket
 	_topic = topic
 	_params = params
+	
+	_rejoin_timer = Timer.new()
+	_rejoin_timer.set_autostart(false)
+	_rejoin_timer.set_wait_time(1)
+	_rejoin_timer.connect("timeout", self, "_on_Timer_timeout")
 
 #
 # Interface
@@ -55,9 +63,13 @@ func join():
 	if not _joined_once:
 		_rejoin()
 
-func close(params):
+func close(params, should_rejoin := false):
+	_joined_once = false
 	_state = ChannelStates.CLOSED
 	emit_signal("on_close", params)
+	
+	if should_rejoin:
+		_rejoin_timer.start()
 	
 func can_push() -> bool:
 	return _socket.can_push() and is_joined()
@@ -74,7 +86,7 @@ func is_member(topic, join_ref) -> bool:
 	
 	return true
 			
-func trigger(message):
+func trigger(message : PhoenixMessage):
 	var status : String = STATUS.ok
 	if message.get_payload().has("status"):
 		status = message.get_payload().status			
@@ -112,12 +124,25 @@ func _joined(event : String, payload : Dictionary = {}):
 	_state = ChannelStates.JOINED
 	emit_signal("on_join_result", event, payload)
 	
-func _rejoin():		
+func _rejoin():
 	if _state == ChannelStates.JOINING or _state == ChannelStates.JOINED:
 		return
 	else:
-		_state = ChannelStates.JOINING
-		
-		var ref = _socket.make_ref()
-		_join_ref = ref
-		_socket.push(_socket.compose_message(CHANNEL_EVENTS.join, _params, _topic, ref, _join_ref))
+		if _socket.can_push(CHANNEL_EVENTS.join):
+			if _should_rejoin_until_connected and !_rejoin_timer.is_stopped():
+				_rejoin_timer.stop()
+				_should_rejoin_until_connected = false
+				
+			_state = ChannelStates.JOINING
+			
+			var ref = _socket.make_ref()
+			_join_ref = ref
+			_socket.push(_socket.compose_message(CHANNEL_EVENTS.join, _params, _topic, ref, _join_ref))
+			
+		else:
+			_should_rejoin_until_connected = true
+
+func _on_Timer_timeout():
+	if _should_rejoin_until_connected:
+		if not _joined_once and _state != ChannelStates.JOINING:
+			_rejoin()

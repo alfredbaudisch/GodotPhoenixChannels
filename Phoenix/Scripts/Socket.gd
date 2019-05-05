@@ -151,7 +151,7 @@ func can_push(event) -> bool:
 	# TODO: do better validation? I.e. do not allow sending message to a topic if a channel is not joined in that topic
 	return is_connected
 	
-func channel(topic, params : Dictionary = {}):
+func channel(topic : String, params : Dictionary = {}) -> PhoenixChannel:
 	var channel := PhoenixChannel.new(self, topic, params)
 	_channels.push_back(channel)
 	add_child(channel)
@@ -262,14 +262,18 @@ func _on_socket_error(reason = null):
 		
 func _on_socket_closed(clean):
 	if not _requested_disconnect:
-		_should_reconnect = true
+		_should_reconnect = true	
 	
 	var payload = {
 		was_requested = _requested_disconnect,
 		will_reconnect = not _requested_disconnect
-	}
+	}	
+
+	for channel in _channels:
+		channel.close(payload, _should_reconnect)
+		
 	print("_on_socket_closed: ", payload)
-	emit_signal("on_close", payload)
+	emit_signal("on_close", payload)	
 	
 func _on_socket_data_received(pid := 1):
 	var packet = _socket.get_peer(1).get_packet()
