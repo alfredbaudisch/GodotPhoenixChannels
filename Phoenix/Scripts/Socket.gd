@@ -44,10 +44,6 @@ var _last_reconnect_try_at := -1
 var _should_reconnect := false
 var _reconnect_after_pos := 0
 
-var _timer := Timer.new()
-var _timer_last_hit_at := -1
-var _pending_timers := []
-
 # TODO: refactor as SocketStates, just like ChannelStates
 export var is_connected := false setget ,get_is_connected
 export var is_connecting := false setget ,get_is_connecting
@@ -79,11 +75,6 @@ func _init(endpoint, opts = {}):
 	
 	_is_https = _settings.endpoint.begins_with("wss")
 	_endpoint_url = PhoenixUtils.add_url_params(_settings.endpoint, _settings.params)
-	
-	_timer.set_autostart(true)
-	_timer.set_wait_time(1)
-	_timer.connect("timeout", self, "_on_timer_timeout")
-	add_child(_timer)
 
 func _ready():
 	_socket.connect("connection_established", self, "_on_socket_connected")
@@ -170,7 +161,6 @@ func push(message : PhoenixMessage):
 	var dict = message.to_dictionary()
 	
 	if can_push(dict.event):	
-		_pending_messages[dict.ref] = message
 		_socket.get_peer(1).put_packet(to_json(dict).to_utf8())		
 		
 func make_ref() -> String:
@@ -216,28 +206,18 @@ func _get_pending_ref(ref):
 	
 func _parse_pending_ref(pending_ref, result):
 	if not pending_ref: return
-	var should_emit = true
 	var should_erase_ref = true
 	
 	var message = pending_ref.to_dictionary()
 	
 	match message.event:		
 		EVENT_HEARTBEAT:
-			should_emit = false
-
 			if result.payload.has("status") and result.payload.status != STATUS.ok:
 				print("TODO: heartbeat failed, now what?")
-					
-#	if should_emit:
-#		emit_event(result.event, result.payload)
 	
 	if should_erase_ref:
-		print("GONNA DELETE REF ", message)
 		_pending_messages.erase(message.ref)
 
-func _broadcast_message(message : PhoenixMessage):
-	pass
-	
 #
 # Listeners
 #
@@ -291,26 +271,3 @@ func _on_socket_data_received(pid := 1):
 			for channel in _channels:
 				if channel.is_member(message.get_topic(), message.get_join_ref()):
 					channel.trigger(message)
-		
-#		match message.get_event():
-#			CHANNEL_EVENTS.reply:								
-#				var pending_ref = _get_pending_ref(ref)
-#				_parse_pending_ref(pending_ref, json.result)
-#
-#			CHANNEL_EVENTS.error:
-#				var pending_ref = _get_pending_ref(ref)
-#				if pending_ref and pending_ref.event == CHANNEL_EVENTS.join:
-#					print("TODO: phx_leave")
-#				else:
-#					print("TODO: handle error")
-#
-#			_:
-#				print("POSSIBLE BROADCAST: ", message)
-#				if ref == null:
-#					_broadcast_message(message)
-
-func rejoin_channel(join_ref):
-	pass
-
-func _on_timer_timeout():
-	_timer_last_hit_at = OS.get_ticks_msec()
