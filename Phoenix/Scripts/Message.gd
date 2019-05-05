@@ -29,7 +29,7 @@ func get_response():
 	if _message.payload.has("response"):
 		return _message.payload.response
 		
-	return null
+	return _message.payload
 
 func to_dictionary() -> Dictionary:
 	return _message

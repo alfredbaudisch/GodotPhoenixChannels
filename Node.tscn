@@ -23,5 +23,21 @@ margin_right = 85.0
 margin_bottom = 52.0
 text = "Connect"
 
+[node name="Button3" type="Button" parent="Control"]
+margin_left = 1.0
+margin_top = 66.0
+margin_right = 99.0
+margin_bottom = 86.0
+text = "Channel Push"
+
+[node name="Button4" type="Button" parent="Control"]
+margin_left = 4.0
+margin_top = 95.0
+margin_right = 102.0
+margin_bottom = 115.0
+text = "Channel Push - Error result"
+
 [connection signal="pressed" from="Control/Button" to="." method="_on_Button_pressed"]
 [connection signal="pressed" from="Control/Button2" to="." method="_on_Button2_pressed"]
+[connection signal="pressed" from="Control/Button3" to="." method="_on_Button3_pressed"]
+[connection signal="pressed" from="Control/Button4" to="." method="_on_Button4_pressed"]

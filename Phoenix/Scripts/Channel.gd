@@ -3,13 +3,14 @@ extends Node
 class_name PhoenixChannel
 
 const TOPIC_PHOENIX := "phoenix"
-const EVENT_HEARTBEAT := "heartbeat"
 const STATUS = {
 	ok = "ok",
 	error = "error",
 	timeout = "timeout"
 }
-
+const PRESENCE_EVENTS := {
+	diff = "presence_diff"
+}
 const CHANNEL_EVENTS := {
 	close = "phx_close",
 	error = "phx_error",
@@ -17,11 +18,8 @@ const CHANNEL_EVENTS := {
 	reply = "phx_reply",
 	leave = "phx_leave"
 }
-enum ChannelStates {CLOSED, ERRORED, JOINED, JOINING, LEAVING}
 
-const PRESENCE_EVENTS := {
-	diff = "presence_diff"
-}
+enum ChannelStates {CLOSED, ERRORED, JOINED, JOINING, LEAVING}
 
 signal on_join_result(event, payload)
 signal on_event(event, payload)
@@ -34,6 +32,7 @@ var _params := {}
 var _joined_once := false
 var _socket
 var _join_ref := ""
+var _pending_refs := {}
 
 var _rejoin_timer : Timer
 var _should_rejoin_until_connected := false
@@ -70,9 +69,20 @@ func close(params, should_rejoin := false):
 	
 	if should_rejoin:
 		_rejoin_timer.start()
+		
+func push(event : String, payload : Dictionary = {}) -> bool:
+	if not can_push(event):
+		return false
+
+	# todo: start timeout	
 	
-func can_push() -> bool:
-	return _socket.can_push() and is_joined()
+	var ref = _socket.make_ref()
+	_pending_refs[ref] = event
+	_socket.push(_socket.compose_message(event, payload, _topic, ref, _join_ref))
+	return true
+	
+func can_push(event : String) -> bool:
+	return _socket.can_push(event) and is_joined()
 	
 func is_member(topic, join_ref) -> bool:
 	if topic != _topic:
@@ -89,7 +99,7 @@ func is_member(topic, join_ref) -> bool:
 func trigger(message : PhoenixMessage):
 	var status : String = STATUS.ok
 	if message.get_payload().has("status"):
-		status = message.get_payload().status			
+		status = message.get_payload().status
 	
 	if message.get_ref() == _join_ref:			
 		_state = ChannelStates.JOINED if status == STATUS.ok else ChannelStates.ERRORED
@@ -107,7 +117,18 @@ func trigger(message : PhoenixMessage):
 		if message.get_event() == PRESENCE_EVENTS.diff:
 			pass
 		else:
-			emit_signal("on_event", message.get_event(), message.get_payload())
+			var event := message.get_event()						
+			match event:
+				CHANNEL_EVENTS.reply:
+					var pending_event = _get_pending_ref(message.get_ref())
+					if pending_event:
+						event = pending_event
+						_pending_refs.erase(message.get_ref())
+
+				_:
+					pass
+					
+			emit_signal("on_event", event, message.get_response(), status)
 	
 #
 # Implementation
@@ -141,6 +162,16 @@ func _rejoin():
 			
 		else:
 			_should_rejoin_until_connected = true
+			
+func _get_pending_ref(ref):	
+	if _pending_refs.has(ref):
+		return _pending_refs[ref]
+			
+	return null
+
+#
+# Listeners
+#
 
 func _on_Timer_timeout():
 	if _should_rejoin_until_connected:
