@@ -89,3 +89,11 @@ Push messages to the server:
 ```gdscript
 channel.push("topic", {some: "param"})
 ```
+
+Broadcasts and push replies are received in the event `PhoenixChannel.on_event`:
+```gdscript
+channel.connect("on_event", self, "_on_Channel_event")
+
+func _on_Channel_event(event, payload, status):
+	print("_on_channel_event:  ", event, ", ", status, ", ", payload)
+```
