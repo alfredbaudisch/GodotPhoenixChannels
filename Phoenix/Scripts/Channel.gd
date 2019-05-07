@@ -24,7 +24,7 @@ const CHANNEL_EVENTS := {
 enum ChannelStates {CLOSED, ERRORED, JOINED, JOINING, LEAVING}
 
 signal on_join_result(event, payload)
-signal on_event(event, payload)
+signal on_event(event, payload, status)
 signal on_error(error)
 signal on_close(params)	
 
@@ -61,11 +61,21 @@ func is_joined() -> bool: return _state == ChannelStates.JOINED
 func is_joining() -> bool: return _state == ChannelStates.JOINING
 func is_leaving() -> bool: return _state == ChannelStates.LEAVING
 
-func join():
-	if not _joined_once:
-		_rejoin()
+func leave() -> bool:
+	if !is_leaving() and !is_closed():
+		push(CHANNEL_EVENTS.leave, {})
+		_state = ChannelStates.LEAVING
+		return true
+		
+	return false
 
-func close(params, should_rejoin := false):
+func join() -> bool:
+	if not _joined_once:
+		return _rejoin()
+	
+	return false
+
+func close(params := {}, should_rejoin := false):
 	_joined_once = false
 	_state = ChannelStates.CLOSED
 	emit_signal("on_close", params)
@@ -104,49 +114,53 @@ func trigger(message : PhoenixMessage):
 	if message.get_payload().has("status"):
 		status = message.get_payload().status
 	
+	# Event related to the channel connection/status
 	if message.get_ref() == _join_ref:
-		if message.get_event() == CHANNEL_EVENTS.error:
-			var reset_rejoin := is_joined()
-			_error(message.get_payload())
-			_start_rejoin(reset_rejoin)
+		match message.get_event():
+			CHANNEL_EVENTS.error:
+				var reset_rejoin := is_joined()
+				_error(message.get_payload())
+				_start_rejoin(reset_rejoin)
 		
-		else:
-			_state = ChannelStates.JOINED if status == STATUS.ok else ChannelStates.ERRORED
-			
-			if _state == ChannelStates.JOINED:
-				_joined_once = true
-				_rejoin_pos = -1
-			else:
-				_joined_once = false
-				_start_rejoin()
+			CHANNEL_EVENTS.close:
+				if _state == ChannelStates.LEAVING:
+					close({reason = "leave"})
+				else:
+					close({reason = "unexpected_close"}, true)
+		
+			_:
+				_state = ChannelStates.JOINED if status == STATUS.ok else ChannelStates.ERRORED
 				
-			emit_signal("on_join_result", status, message.get_response())
-		
+				if _state == ChannelStates.JOINED:
+					_joined_once = true
+					_rejoin_pos = -1
+				else:
+					_joined_once = false
+					_start_rejoin()
+					
+				emit_signal("on_join_result", status, message.get_response())
+	
+	# Event related to push replies, presence or broadcasts
 	else:
 		var event := message.get_event()
 		
 		# TODO: implement presence
 		if event == PRESENCE_EVENTS.diff:
 			pass
-		else:									
-			match event:
-				CHANNEL_EVENTS.reply:
-					var pending_event = _get_pending_ref(message.get_ref())
-					if pending_event:
-						event = pending_event
-						_pending_refs.erase(message.get_ref())
+		else:		
+			# Try to get event related to the reply
+			if event == CHANNEL_EVENTS.reply:
+				var pending_event = _get_pending_ref(message.get_ref())
+				if pending_event:
+					event = pending_event
+					_pending_refs.erase(message.get_ref())
 
-				_:
-					pass
-					
-			emit_signal("on_event", event, message.get_response(), status)
+			if event != CHANNEL_EVENTS.leave:
+				emit_signal("on_event", event, message.get_response(), status)
 			
 #
 # Implementation
 #
-
-func _event(event, payload):
-	emit_signal("on_event", payload)
 
 func _error(error):
 	_state = ChannelStates.ERRORED
@@ -167,9 +181,10 @@ func _start_rejoin(reset := false):
 
 	_should_rejoin_until_connected = true
 	
-func _rejoin():
+func _rejoin() -> bool:
 	if _state == ChannelStates.JOINING or _state == ChannelStates.JOINED:
-		return
+		return false
+		
 	else:
 		if _socket.can_push(CHANNEL_EVENTS.join):
 			if _should_rejoin_until_connected and !_rejoin_timer.is_stopped():
@@ -181,21 +196,23 @@ func _rejoin():
 			var ref = _socket.make_ref()
 			_join_ref = ref
 			_socket.push(_socket.compose_message(CHANNEL_EVENTS.join, _params, _topic, ref, _join_ref))
+			return true
 			
 		else:
 			_should_rejoin_until_connected = true
+			return false
 			
 func _get_pending_ref(ref):	
 	if _pending_refs.has(ref):
 		return _pending_refs[ref]
 			
 	return null
-
+	
 #
 # Listeners
 #
 
 func _on_Timer_timeout():
 	if _should_rejoin_until_connected:
-		if not _joined_once and _state != ChannelStates.JOINING:
+		if not _joined_once:
 			_rejoin()

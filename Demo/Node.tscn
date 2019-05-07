@@ -37,7 +37,23 @@ margin_right = 102.0
 margin_bottom = 115.0
 text = "Channel Push - Error result"
 
+[node name="Button5" type="Button" parent="Control"]
+margin_left = 6.0
+margin_top = 135.0
+margin_right = 188.0
+margin_bottom = 155.0
+text = "Leave"
+
+[node name="Button6" type="Button" parent="Control"]
+margin_left = 13.0
+margin_top = 170.0
+margin_right = 195.0
+margin_bottom = 190.0
+text = "Join"
+
 [connection signal="pressed" from="Control/Button" to="." method="_on_Button_pressed"]
 [connection signal="pressed" from="Control/Button2" to="." method="_on_Button2_pressed"]
 [connection signal="pressed" from="Control/Button3" to="." method="_on_Button3_pressed"]
 [connection signal="pressed" from="Control/Button4" to="." method="_on_Button4_pressed"]
+[connection signal="pressed" from="Control/Button5" to="." method="_on_Button5_pressed"]
+[connection signal="pressed" from="Control/Button6" to="." method="_on_Button6_pressed"]
