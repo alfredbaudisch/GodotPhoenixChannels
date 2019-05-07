@@ -104,24 +104,31 @@ func trigger(message : PhoenixMessage):
 	if message.get_payload().has("status"):
 		status = message.get_payload().status
 	
-	if message.get_ref() == _join_ref:			
-		_state = ChannelStates.JOINED if status == STATUS.ok else ChannelStates.ERRORED
+	if message.get_ref() == _join_ref:
+		if message.get_event() == CHANNEL_EVENTS.error:
+			var reset_rejoin := is_joined()
+			_error(message.get_payload())
+			_start_rejoin(reset_rejoin)
 		
-		if _state == ChannelStates.JOINED:
-			_joined_once = true
-			_rejoin_pos = -1
 		else:
-			_joined_once = false
-			_start_rejoin()
+			_state = ChannelStates.JOINED if status == STATUS.ok else ChannelStates.ERRORED
 			
-		emit_signal("on_join_result", status, message.get_response())
+			if _state == ChannelStates.JOINED:
+				_joined_once = true
+				_rejoin_pos = -1
+			else:
+				_joined_once = false
+				_start_rejoin()
+				
+			emit_signal("on_join_result", status, message.get_response())
 		
 	else:
+		var event := message.get_event()
+		
 		# TODO: implement presence
-		if message.get_event() == PRESENCE_EVENTS.diff:
+		if event == PRESENCE_EVENTS.diff:
 			pass
-		else:
-			var event := message.get_event()						
+		else:									
 			match event:
 				CHANNEL_EVENTS.reply:
 					var pending_event = _get_pending_ref(message.get_ref())
@@ -133,7 +140,7 @@ func trigger(message : PhoenixMessage):
 					pass
 					
 			emit_signal("on_event", event, message.get_response(), status)
-	
+			
 #
 # Implementation
 #
@@ -145,11 +152,11 @@ func _error(error):
 	_state = ChannelStates.ERRORED
 	emit_signal("on_error", error)
 	
-func _joined(event : String, payload : Dictionary = {}):
-	_state = ChannelStates.JOINED
-	emit_signal("on_join_result", event, payload)
-	
-func _start_rejoin():
+func _start_rejoin(reset := false):
+	if reset:
+		_rejoin_pos = -1
+		_joined_once = false		
+		
 	if _rejoin_pos < DEFAULT_REJOIN_AFTER.size() - 1:
 		_rejoin_pos += 1
 		

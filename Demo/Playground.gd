@@ -5,7 +5,7 @@ var channel : PhoenixChannel
 
 func _ready():
 	phoenix = PhoenixSocket.new("ws://localhost:4000/socket", {
-		heartbeat_interval = 5000,
+		heartbeat_interval = 10000,
 		params = {user_id = 4}
 	})
 	#phoenix.connect("on_event", self, "_on_channel_event")
@@ -17,6 +17,7 @@ func _ready():
 	channel = phoenix.channel("game:abc")
 	channel.connect("on_event", self, "_on_channel_event")
 	channel.connect("on_join_result", self, "_on_channel_join_result")
+	channel.connect("on_error", self, "_on_channel_error")
 	
 	get_parent().call_deferred("add_child", phoenix, true)
 	phoenix.connect_socket()
@@ -36,6 +37,9 @@ func _on_channel_event(event, payload, status):
 	
 func _on_channel_join_result(status, result):
 	print("_on_channel_join_result:  ", status, result)
+	
+func _on_channel_error(error):
+	print("_on_channel_error:  ", error)
 	
 func _on_Phoenix_socket_connecting(is_connecting):
 	print("_on_Phoenix_socket_connecting: ", " ", is_connecting)
