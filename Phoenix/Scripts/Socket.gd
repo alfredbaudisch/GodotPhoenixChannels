@@ -6,16 +6,18 @@ class_name PhoenixSocket
 # Socket Members
 #
 
-const DEFAULT_TIMEOUT := 10000
-const DEFAULT_HEARTBEAT_INTERVAL := 30000
+const DEFAULT_TIMEOUT_MS := 10000
+const DEFAULT_HEARTBEAT_INTERVAL_MS := 30000
 const DEFAULT_BASE_ENDPOINT := "ws://localhost:4000/socket"
-const DEFAULT_RECONNECT_AFTER := [1000, 2000, 5000, 10000]
+const DEFAULT_RECONNECT_AFTER_MS := [1000, 2000, 5000, 10000]
 const TRANSPORT := "websocket"
 
 const WRITE_MODE := WebSocketPeer.WRITE_MODE_TEXT
 
 const TOPIC_PHOENIX := "phoenix"
 const EVENT_HEARTBEAT := "heartbeat"
+const EMPTY_REF := "-1"
+
 const STATUS = {
 	ok = "ok",
 	error = "error",
@@ -36,9 +38,10 @@ var _last_status := -1
 var _connected_at := -1
 var _last_connected_at := -1
 var _requested_disconnect := false
+var _last_close_reason := {}
 
 var _last_heartbeat_at := 0
-var _pending_heartbeat_ref := 0
+var _pending_heartbeat_ref := EMPTY_REF
 
 var _last_reconnect_try_at := -1
 var _should_reconnect := false
@@ -48,17 +51,8 @@ var _reconnect_after_pos := 0
 export var is_connected := false setget ,get_is_connected
 export var is_connecting := false setget ,get_is_connecting
 
-# Events
+# Events / Messages
 var _ref := 0
-var _pending_messages := {}
-
-#
-# Channel Members
-#
-
-#
-# Channel
-#
 
 #
 # Godot lifecycle for PhoenixSocket
@@ -66,9 +60,9 @@ var _pending_messages := {}
 
 func _init(endpoint, opts = {}):
 	_settings = {
-		heartbeat_interval = PhoenixUtils.get_key_or_default(opts, "heartbeat_interval", DEFAULT_HEARTBEAT_INTERVAL),
-		timeout = PhoenixUtils.get_key_or_default(opts, "timeout", DEFAULT_TIMEOUT),
-		reconnect_after = PhoenixUtils.get_key_or_default(opts, "reconnect_after", DEFAULT_RECONNECT_AFTER),
+		heartbeat_interval = PhoenixUtils.get_key_or_default(opts, "heartbeat_interval", DEFAULT_HEARTBEAT_INTERVAL_MS),
+		timeout = PhoenixUtils.get_key_or_default(opts, "timeout", DEFAULT_TIMEOUT_MS),
+		reconnect_after = PhoenixUtils.get_key_or_default(opts, "reconnect_after", DEFAULT_RECONNECT_AFTER_MS),
 		params = PhoenixUtils.get_key_or_default(opts, "params", {}),
 		endpoint = PhoenixUtils.add_trailing_slash(endpoint if endpoint else DEFAULT_BASE_ENDPOINT) + TRANSPORT
 	}
@@ -125,12 +119,8 @@ func connect_socket():
 	_socket.verify_ssl = false
 	_socket.connect_to_url(_endpoint_url)
 	
-func disconnect_socket():
-	if not is_connected:
-		return
-	
-	_requested_disconnect = true
-	_socket.disconnect_from_host()	
+func disconnect_socket():	
+	_close(true, {message = "disconnect requested"})
 
 func get_is_connected() -> bool:
 	return is_connected
@@ -138,8 +128,7 @@ func get_is_connected() -> bool:
 func get_is_connecting() -> bool:
 	return is_connecting
 	
-func can_push(event) -> bool:
-	# TODO: do better validation? I.e. do not allow sending message to a topic if a channel is not joined in that topic
+func can_push(event : String) -> bool:
 	return is_connected
 	
 func channel(topic : String, params : Dictionary = {}) -> PhoenixChannel:
@@ -171,6 +160,17 @@ func make_ref() -> String:
 # Implementation 
 #
 
+func _trigger_channel_error(channel : PhoenixChannel, payload := {}):
+	channel.raw_trigger(PhoenixChannel.CHANNEL_EVENTS.error, payload)
+
+func _close(requested := false, reason := {}):
+	if not is_connected:
+		return
+		
+	_last_close_reason = reason
+	_requested_disconnect = requested
+	_socket.disconnect_from_host()	
+
 func _reset_reconnection():
 	_last_reconnect_try_at = -1
 	_should_reconnect = false
@@ -195,29 +195,15 @@ func _retry_reconnect(current_time):
 				connect_socket()
 	
 func _heartbeat(time):
-	push(compose_message(EVENT_HEARTBEAT, {}, TOPIC_PHOENIX))
-	_last_heartbeat_at = time
+	if get_is_connected():
+		# There is still a pending heartbeat, which means it timed out
+		if _pending_heartbeat_ref != EMPTY_REF:
+			_close(false, {message = "heartbeat timeout"})
+		else:
+			_pending_heartbeat_ref = make_ref()
+			push(compose_message(EVENT_HEARTBEAT, {}, TOPIC_PHOENIX, _pending_heartbeat_ref))
+			_last_heartbeat_at = time
 	
-func _get_pending_ref(ref):	
-	if _pending_messages.has(ref):
-		return _pending_messages[ref]
-			
-	return null
-	
-func _parse_pending_ref(pending_ref, result):
-	if not pending_ref: return
-	var should_erase_ref = true
-	
-	var message = pending_ref.to_dictionary()
-	
-	match message.event:		
-		EVENT_HEARTBEAT:
-			if result.payload.has("status") and result.payload.status != STATUS.ok:
-				print("TODO: heartbeat failed, now what?")
-	
-	if should_erase_ref:
-		_pending_messages.erase(message.ref)
-
 #
 # Listeners
 #
@@ -225,7 +211,9 @@ func _parse_pending_ref(pending_ref, result):
 func _on_socket_connected(protocol):
 	_socket.get_peer(1).set_write_mode(WRITE_MODE)
 	
-	_connected_at = OS.get_ticks_msec()	
+	_connected_at = OS.get_ticks_msec()
+	_last_close_reason = {}
+	_pending_heartbeat_ref = EMPTY_REF
 	_last_heartbeat_at = 0
 	_requested_disconnect = false
 	_reset_reconnection()
@@ -237,7 +225,7 @@ func _on_socket_error(reason = null):
 	if not is_connected or (_connected_at == -1 and _last_connected_at != -1):
 		_should_reconnect = true
 
-	print("_on_socket_closed: ", reason)
+	print("_on_socket_error: ", reason)
 	emit_signal("on_error", reason)
 		
 func _on_socket_closed(clean):
@@ -246,9 +234,10 @@ func _on_socket_closed(clean):
 	
 	var payload = {
 		was_requested = _requested_disconnect,
-		will_reconnect = not _requested_disconnect
+		will_reconnect = not _requested_disconnect,
+		reason = _last_close_reason
 	}	
-
+	
 	for channel in _channels:
 		channel.close(payload, _should_reconnect)
 		
@@ -266,7 +255,8 @@ func _on_socket_data_received(pid := 1):
 		var ref = message.get_ref()
 		
 		if message.get_topic() == TOPIC_PHOENIX:
-			pass
+			if ref == _pending_heartbeat_ref:
+				_pending_heartbeat_ref = EMPTY_REF
 		else:
 			for channel in _channels:
 				if channel.is_member(message.get_topic(), message.get_join_ref()):

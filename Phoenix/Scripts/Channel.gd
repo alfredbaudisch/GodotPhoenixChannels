@@ -2,7 +2,7 @@ extends Node
 
 class_name PhoenixChannel
 
-const DEFAULT_REJOIN_AFTER := [1, 2, 5, 10]
+const DEFAULT_REJOIN_AFTER_SECONDS := [1, 2, 5, 10]
 
 const TOPIC_PHOENIX := "phoenix"
 const STATUS = {
@@ -108,6 +108,9 @@ func is_member(topic, join_ref) -> bool:
 		return false
 	
 	return true
+	
+func raw_trigger(event : String, payload := {}):
+	trigger(PhoenixMessage.new(_topic, event, PhoenixMessage.NO_REPLY_REF, _join_ref, payload))
 			
 func trigger(message : PhoenixMessage):
 	var status : String = STATUS.ok
@@ -171,10 +174,10 @@ func _start_rejoin(reset := false):
 		_rejoin_pos = -1
 		_joined_once = false		
 		
-	if _rejoin_pos < DEFAULT_REJOIN_AFTER.size() - 1:
+	if _rejoin_pos < DEFAULT_REJOIN_AFTER_SECONDS.size() - 1:
 		_rejoin_pos += 1
 		
-	_rejoin_timer.set_wait_time(DEFAULT_REJOIN_AFTER[_rejoin_pos])
+	_rejoin_timer.set_wait_time(DEFAULT_REJOIN_AFTER_SECONDS[_rejoin_pos])
 	
 	if _rejoin_timer.is_stopped():
 		_rejoin_timer.start()
