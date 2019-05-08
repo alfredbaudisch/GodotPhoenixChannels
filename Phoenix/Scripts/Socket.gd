@@ -225,12 +225,15 @@ func _on_socket_error(reason = null):
 	if not is_connected or (_connected_at == -1 and _last_connected_at != -1):
 		_should_reconnect = true
 
-	print("_on_socket_error: ", reason)
-	emit_signal("on_error", reason)
+	_last_close_reason = reason if reason else {message = "connection error"}
+	
+	emit_signal("on_error", _last_close_reason)
 		
 func _on_socket_closed(clean):
 	if not _requested_disconnect:
 		_should_reconnect = true	
+	
+	_last_close_reason = {message = "connection lost"} if _last_close_reason.empty() else _last_close_reason
 	
 	var payload = {
 		was_requested = _requested_disconnect,
@@ -240,8 +243,7 @@ func _on_socket_closed(clean):
 	
 	for channel in _channels:
 		channel.close(payload, _should_reconnect)
-		
-	print("_on_socket_closed: ", payload)
+
 	emit_signal("on_close", payload)	
 	
 func _on_socket_data_received(pid := 1):
