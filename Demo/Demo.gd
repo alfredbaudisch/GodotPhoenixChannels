@@ -135,14 +135,28 @@ func _on_Channel_close(closed):
 	_join_topic.set_text("Join Channel")
 	
 func _on_Presence_join(joins):
+	for join in joins:
+		if not users.has(join.key):
+			users[join.key] = join.key
+	_list_users()
 	_log("_on_Presence_join: " + str(joins))
 	
 func _on_Presence_leave(leaves):
+	for leave in leaves:
+		if users.has(leave.key):
+			users.erase(leave.key)
+	_list_users()
 	_log("_on_Presence_leave: " + str(leaves))
 
 #
 # Utils
 #
+
+func _list_users():
+	var list := ""	
+	for user in users:
+		list += "- " + user + "\n"	
+	_presence_list.set_text(list)
 
 func _log(message):
 	print(message)
