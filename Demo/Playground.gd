@@ -24,10 +24,7 @@ func _ready():
 	channel.connect("on_join_result", self, "_on_channel_join_result")
 	channel.connect("on_error", self, "_on_channel_error")
 	channel.connect("on_close", self, "_on_channel_close")
-	
-	channel.connect("on_presence_join", self, "_on_presence_join")
-	channel.connect("on_presence_leave", self, "_on_presence_leave")
-	
+		
 	get_parent().call_deferred("add_child", phoenix, true)
 	phoenix.connect_socket()
 

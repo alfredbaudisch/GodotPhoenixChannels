@@ -30,7 +30,7 @@ signal on_error(error)
 signal on_close(params)	
 
 var _state = ChannelStates.CLOSED
-var _topic := ""
+var _topic := "" setget set_topic,get_topic
 var _params := {}
 var _joined_once := false
 var _socket
@@ -75,6 +75,13 @@ func is_errored() -> bool: return _state == ChannelStates.ERRORED
 func is_joined() -> bool: return _state == ChannelStates.JOINED
 func is_joining() -> bool: return _state == ChannelStates.JOINING
 func is_leaving() -> bool: return _state == ChannelStates.LEAVING
+
+func set_topic(topic : String):
+	assert(is_closed())		
+	_topic = topic
+	
+func get_topic() -> String:
+	return _topic
 
 func leave() -> bool:
 	if !is_leaving() and !is_closed():
