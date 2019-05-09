@@ -28,6 +28,26 @@ func _run_utils_tests():
 	
 	result = PhoenixUtils.add_url_params(result, {bar = "baz", "number": 12.5})
 	test(result == url + "?foo=True&bar=baz&number=12.5")
+	
+	var mapped := []
+	mapped = PhoenixUtils.map(funcref(self, "get_dict_ref"), [{ref = "1", foo = "bar"}, {ref = "godot"}])
+	test(mapped == ["1", "godot"])
+	
+	mapped = PhoenixUtils.map(funcref(self, "get_dict_ref"), [{ref = "1", foo = "bar"}, {name = "godot"}])
+	test(mapped == ["1", "godot"])	
+	
+	var filtered := []
+	filtered = PhoenixUtils.filter(funcref(self, "filter_with_number"), [{ref = "1", number = 1}, {ref = "godot"}, {ref = "phoenix", number = 2}])
+	test(filtered.size() == 2 and filtered[0].number == 1 and filtered[1].number == 2)
+	
+	filtered = PhoenixUtils.filter(funcref(self, "filter_with_number"), [{ref = "1"}, {ref = "godot"}, {ref = "phoenix"}, {}])
+	test(filtered.empty())
+	
+func get_dict_ref(value):
+	return value.ref if value.has("ref") else value.name
+	
+func filter_with_number(value):
+	return value.has("number")
 
 func test(condition : bool, name = null):
 	assert(condition)
