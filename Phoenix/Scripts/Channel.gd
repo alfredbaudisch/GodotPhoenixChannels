@@ -11,7 +11,8 @@ const STATUS = {
 	timeout = "timeout"
 }
 const PRESENCE_EVENTS := {
-	diff = "presence_diff"
+	diff = "presence_diff",
+	state = "presence_state"
 }
 const CHANNEL_EVENTS := {
 	close = "phx_close",
@@ -39,6 +40,57 @@ var _pending_refs := {}
 var _rejoin_timer : Timer
 var _should_rejoin_until_connected := false
 var _rejoin_pos := -1
+
+class Presence:
+	var _state := {}
+	
+	func sync_state(new_state : Dictionary):		
+		var joins := {}
+		var leaves := {}
+		
+		var keys := _state.keys()
+		for key in keys:
+			if not new_state.has(key):
+				leaves[key] = _state[key]
+		
+		var new_state_keys := new_state.keys()		
+		for key in new_state_keys:			
+			var new_presence = new_state[key]
+			
+			if _state.has(key):
+				var current_presence = _state[key]
+				var new_refs := PhoenixUtils.map(funcref(self, "_get_phx_ref"), new_presence)
+				var curr_refs := PhoenixUtils.map(funcref(self, "_get_phx_ref"), current_presence)
+				
+				var joined_metas := _find_metas_from_refs(new_presence.metas, curr_refs)
+				var left_metas := _find_metas_from_refs(current_presence.metas, new_refs)
+						
+				if joined_metas.size() > 0:
+					joins[key] = new_presence
+					joins[key].metas = joined_metas
+					
+				if left_metas.size() > 0:
+					leaves[key] = current_presence.duplicate(true)
+					leaves[key].metas = left_metas					
+			
+			else:
+				joins[key] = new_presence
+		
+	func sync_diff(diff):
+		pass	
+		
+	func _get_phx_ref(presence : Dictionary) -> String:
+		return presence.phx_ref			
+	
+	func _find_metas_from_refs(metas : Array, refs : Array) -> Array:	
+		var final_metas := []
+			
+		for meta in metas:
+			var pos := refs.find(meta.phx_ref)
+			if pos != -1:
+				final_metas.append(meta)
+		
+		return final_metas
 
 func _init(socket, topic, params : Dictionary = {}):
 	assert(topic != TOPIC_PHOENIX)
