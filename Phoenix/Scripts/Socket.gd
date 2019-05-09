@@ -154,6 +154,7 @@ func set_params(params : Dictionary = {}):
 	
 func can_push(event : String) -> bool:
 	return is_connected
+	
 func channel(topic : String, params : Dictionary = {}, presence = null) -> PhoenixChannel:
 	var channel := PhoenixChannel.new(self, topic, params, presence)
 	
