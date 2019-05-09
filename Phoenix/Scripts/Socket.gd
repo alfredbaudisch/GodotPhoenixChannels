@@ -108,6 +108,20 @@ func _process(delta):
 
 	_socket.poll()
 	
+func _enter_tree():
+	get_tree().connect("node_removed", self, "_on_node_removed")
+	
+func _exit_tree():
+	var payload = {message = "exit tree"}
+	_close(true, payload)
+	
+	"""
+	Closing the socket with _socket() leads to the chain of events that eventually call on_close,
+	but then in this specific case of exiting the tree, the event is not called, because
+	the tree is freed, so force call it from here.
+	"""	
+	emit_signal("on_close", payload)
+	
 #
 # Public
 #
@@ -204,6 +218,11 @@ func _heartbeat(time):
 			push(compose_message(EVENT_HEARTBEAT, {}, TOPIC_PHOENIX, _pending_heartbeat_ref))
 			_last_heartbeat_at = time
 	
+func _find_and_remove_channel(channel : PhoenixChannel):	
+	var pos = _channels.find(channel)
+	if pos != -1:
+		_channels.remove(pos)
+		
 #
 # Listeners
 #
@@ -263,3 +282,8 @@ func _on_socket_data_received(pid := 1):
 			for channel in _channels:
 				if channel.is_member(message.get_topic(), message.get_join_ref()):
 					channel.trigger(message)
+
+func _on_node_removed(node : Node):
+	var channel = node as PhoenixChannel
+	if channel:
+		_find_and_remove_channel(channel)
