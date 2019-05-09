@@ -31,7 +31,7 @@ signal on_connecting(is_connecting)
 
 var _socket := WebSocketClient.new()
 var _channels := []
-var _settings := {}
+var _settings := {} setget ,get_settings
 var _is_https := false
 var _endpoint_url := ""
 var _last_status := -1
@@ -64,11 +64,9 @@ func _init(endpoint, opts = {}):
 		timeout = PhoenixUtils.get_key_or_default(opts, "timeout", DEFAULT_TIMEOUT_MS),
 		reconnect_after = PhoenixUtils.get_key_or_default(opts, "reconnect_after", DEFAULT_RECONNECT_AFTER_MS),
 		params = PhoenixUtils.get_key_or_default(opts, "params", {}),
-		endpoint = PhoenixUtils.add_trailing_slash(endpoint if endpoint else DEFAULT_BASE_ENDPOINT) + TRANSPORT
 	}
 	
-	_is_https = _settings.endpoint.begins_with("wss")
-	_endpoint_url = PhoenixUtils.add_url_params(_settings.endpoint, _settings.params)
+	set_endpoint(endpoint)	
 
 func _ready():
 	_socket.connect("connection_established", self, "_on_socket_connected")
@@ -131,6 +129,8 @@ func connect_socket():
 		return
 	
 	_socket.verify_ssl = false
+	
+	_endpoint_url = PhoenixUtils.add_url_params(_settings.endpoint, _settings.params)
 	_socket.connect_to_url(_endpoint_url)
 	
 func disconnect_socket():	
@@ -141,6 +141,16 @@ func get_is_connected() -> bool:
 	
 func get_is_connecting() -> bool:
 	return is_connecting
+	
+func get_settings():
+	return _settings
+	
+func set_endpoint(endpoint : String):
+	_settings.endpoint = PhoenixUtils.add_trailing_slash(endpoint if endpoint else DEFAULT_BASE_ENDPOINT) + TRANSPORT
+	_is_https = _settings.endpoint.begins_with("wss")
+	
+func set_params(params : Dictionary = {}):
+	_settings.params = params
 	
 func can_push(event : String) -> bool:
 	return is_connected

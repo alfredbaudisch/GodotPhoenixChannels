@@ -29,8 +29,6 @@ signal on_event(event, payload, status)
 signal on_error(error)
 signal on_close(params)	
 
-
-
 var _state = ChannelStates.CLOSED
 var _topic := ""
 var _params := {}
