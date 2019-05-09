@@ -50,6 +50,16 @@ func _init(socket, topic, params : Dictionary = {}):
 	_rejoin_timer.set_autostart(false)
 	_rejoin_timer.connect("timeout", self, "_on_Timer_timeout")
 	add_child(_rejoin_timer)
+	
+func _exit_tree():
+	leave()
+	
+	"""
+	Leaving the channel with leave() leads to the chain of events that eventually call on_close,
+	but then in this specific case of exiting the tree, the event is not called,
+	so force call it from here.
+	"""	
+	emit_signal("on_close", {message = "exit tree"})
 
 #
 # Interface

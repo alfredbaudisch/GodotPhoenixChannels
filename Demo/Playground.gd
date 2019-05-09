@@ -63,10 +63,18 @@ func _on_Button3_pressed():
 func _on_Button4_pressed():
 	channel.push("hit", {error = true})
 
-
 func _on_Button5_pressed():
 	channel.leave()
 
 
 func _on_Button6_pressed():
 	channel.join()
+
+
+func _on_Button7_pressed():
+	channel.queue_free()
+
+
+func _on_Button8_pressed():
+	phoenix.queue_free()
+	
