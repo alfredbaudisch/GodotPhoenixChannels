@@ -11,7 +11,8 @@ const STATUS = {
 	timeout = "timeout"
 }
 const PRESENCE_EVENTS := {
-	diff = "presence_diff"
+	diff = "presence_diff",
+	state = "presence_state"
 }
 const CHANNEL_EVENTS := {
 	close = "phx_close",
@@ -28,6 +29,8 @@ signal on_event(event, payload, status)
 signal on_error(error)
 signal on_close(params)	
 
+
+
 var _state = ChannelStates.CLOSED
 var _topic := ""
 var _params := {}
@@ -40,11 +43,15 @@ var _rejoin_timer : Timer
 var _should_rejoin_until_connected := false
 var _rejoin_pos := -1
 
-func _init(socket, topic, params : Dictionary = {}):
+var _presence : PhoenixPresence
+
+func _init(socket, topic : String, params : Dictionary = {}, presence = null):
 	assert(topic != TOPIC_PHOENIX)
 	_socket = socket
 	_topic = topic
 	_params = params
+	
+	_presence = presence
 	
 	_rejoin_timer = Timer.new()
 	_rejoin_timer.set_autostart(false)
@@ -88,6 +95,7 @@ func join() -> bool:
 func close(params := {}, should_rejoin := false):
 	_joined_once = false
 	_state = ChannelStates.CLOSED
+	_presence.clear()
 	emit_signal("on_close", params)
 	
 	if should_rejoin:
@@ -157,9 +165,10 @@ func trigger(message : PhoenixMessage):
 	else:
 		var event := message.get_event()
 		
-		# TODO: implement presence
-		if event == PRESENCE_EVENTS.diff:
-			pass
+		if event == PRESENCE_EVENTS.diff or event == PRESENCE_EVENTS.state:
+			if _presence:
+				emit_signal("on_event", event, message.get_payload(), STATUS.ok)
+				
 		else:		
 			# Try to get event related to the reply
 			if event == CHANNEL_EVENTS.reply:
@@ -177,6 +186,7 @@ func trigger(message : PhoenixMessage):
 
 func _error(error):
 	_state = ChannelStates.ERRORED
+	_presence.clear()
 	emit_signal("on_error", error)
 	
 func _start_rejoin(reset := false):
