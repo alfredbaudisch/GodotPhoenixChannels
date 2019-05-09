@@ -2,6 +2,7 @@ extends Node
 
 var phoenix : PhoenixSocket
 var channel : PhoenixChannel
+var presence : PhoenixPresence
 
 func _ready():
 	phoenix = PhoenixSocket.new("ws://localhost:4000/socket", {
@@ -14,7 +15,11 @@ func _ready():
 	phoenix.connect("on_error", self, "_on_Phoenix_socket_error")
 	phoenix.connect("on_connecting", self, "_on_Phoenix_socket_connecting")
 	
-	channel = phoenix.channel("game:abc", {}, true)
+	presence = PhoenixPresence.new()
+	presence.connect("on_join", self, "_on_presence_join")
+	presence.connect("on_leave", self, "_on_presence_leave")
+	
+	channel = phoenix.channel("game:abc", {}, presence)
 	channel.connect("on_event", self, "_on_channel_event")
 	channel.connect("on_join_result", self, "_on_channel_join_result")
 	channel.connect("on_error", self, "_on_channel_error")
@@ -37,10 +42,15 @@ func _on_Phoenix_socket_error(payload):
 	print("_on_Phoenix_socket_error: ", " ", payload)
 	
 func _on_channel_event(event, payload, status):
-	if status == PhoenixChannel.STATUS.ok:
-		print("OK!")
-		
 	print("_on_channel_event:  ", event, ", ", status, ", ", payload)
+	
+	if event == PhoenixChannel.PRESENCE_EVENTS.diff:
+		presence.sync_diff(payload)
+		print("Users: ", presence.get_state())
+		
+	if event == PhoenixChannel.PRESENCE_EVENTS.state:
+		presence.sync_state(payload)
+		print("List users: ", presence.list())
 	
 func _on_channel_join_result(status, result):
 	print("_on_channel_join_result:  ", status, result)
@@ -51,11 +61,11 @@ func _on_channel_error(error):
 func _on_channel_close(closed):
 	print("_on_channel_close:  ", closed)
 	
-func _on_presence_join(key, current_presence, new_presence):
-	print("_on_presence_join:  ", key, current_presence, new_presence)
+func _on_presence_join(joins):
+	print("_on_presence_join:  ", joins)
 	
-func _on_presence_leave(key, current_presence, new_presence):
-	print("_on_presence_leave:  ", key, current_presence, new_presence)
+func _on_presence_leave(leaves):
+	print("_on_presence_leave:  ", leaves)
 	
 func _on_Phoenix_socket_connecting(is_connecting):
 	print("_on_Phoenix_socket_connecting: ", " ", is_connecting)
