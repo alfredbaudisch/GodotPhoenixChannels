@@ -29,6 +29,9 @@ signal on_event(event, payload, status)
 signal on_error(error)
 signal on_close(params)	
 
+signal on_presence_join(key, current_presence, new_presence)
+signal on_presence_leave(key, current_presence, left_presence)
+
 var _state = ChannelStates.CLOSED
 var _topic := ""
 var _params := {}
@@ -41,11 +44,17 @@ var _rejoin_timer : Timer
 var _should_rejoin_until_connected := false
 var _rejoin_pos := -1
 
-func _init(socket, topic, params : Dictionary = {}):
+var _presence : Presence
+var _with_presence := false
+
+func _init(socket, topic : String, params : Dictionary = {}, with_presence := false):
 	assert(topic != TOPIC_PHOENIX)
 	_socket = socket
 	_topic = topic
 	_params = params
+	
+	_with_presence = with_presence
+	_presence = Presence.new()
 	
 	_rejoin_timer = Timer.new()
 	_rejoin_timer.set_autostart(false)
@@ -89,6 +98,7 @@ func join() -> bool:
 func close(params := {}, should_rejoin := false):
 	_joined_once = false
 	_state = ChannelStates.CLOSED
+	_presence.clear()
 	emit_signal("on_close", params)
 	
 	if should_rejoin:
@@ -158,9 +168,16 @@ func trigger(message : PhoenixMessage):
 	else:
 		var event := message.get_event()
 		
-		# TODO: implement presence
 		if event == PRESENCE_EVENTS.diff:
-			pass
+			if _with_presence:
+				var presence = _presence.sync_diff(message.get_payload())
+				emit_signal("on_event", event, presence, STATUS.ok)
+				
+		elif event == PRESENCE_EVENTS.state:
+			if _with_presence:				
+				var presence = _presence.sync_state(message.get_payload())
+				emit_signal("on_event", event, presence, STATUS.ok)
+				
 		else:		
 			# Try to get event related to the reply
 			if event == CHANNEL_EVENTS.reply:
@@ -178,6 +195,7 @@ func trigger(message : PhoenixMessage):
 
 func _error(error):
 	_state = ChannelStates.ERRORED
+	_presence.clear()
 	emit_signal("on_error", error)
 	
 func _start_rejoin(reset := false):
@@ -236,7 +254,7 @@ func _on_Timer_timeout():
 #
 
 class Presence:
-	var _state := {}
+	var _state := {} setget ,get_state	
 	
 	func sync_state(new_state : Dictionary):		
 		var joins := {}
@@ -289,7 +307,7 @@ class Presence:
 				for meta in current_presence.metas:
 					_state[key].metas.push_front(meta)
 			
-			#on_join(key, current_presence, new_presence)
+			emit_signal("on_presence_join", key, current_presence, new_presence)
 			
 		keys = leaves.keys()
 		for key in keys:
@@ -300,7 +318,7 @@ class Presence:
 				var refs_to_remove = PhoenixUtils.map(funcref(self, "_get_phx_ref"), left_presence.metas)				
 				current_presence.metas = _find_metas_from_refs(current_presence.metas, refs_to_remove)
 				
-				#on_leave(key, current_presence, left_presence)
+				emit_signal("on_presence_leave", key, current_presence, left_presence)
 				
 				if current_presence.metas.size() == 0:
 					_state.erase(key)
@@ -317,6 +335,12 @@ class Presence:
 		
 		else:
 			return _state.values()
+			
+	func clear():
+		_state.clear()
+		
+	func get_state():
+		return _state
 
 	func _get_phx_ref(presence : Dictionary) -> String:
 		return presence.phx_ref			

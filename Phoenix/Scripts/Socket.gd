@@ -145,8 +145,8 @@ func get_is_connecting() -> bool:
 func can_push(event : String) -> bool:
 	return is_connected
 	
-func channel(topic : String, params : Dictionary = {}) -> PhoenixChannel:
-	var channel := PhoenixChannel.new(self, topic, params)
+func channel(topic : String, params : Dictionary = {}, with_presence := false) -> PhoenixChannel:
+	var channel := PhoenixChannel.new(self, topic, params, with_presence)
 	_channels.push_back(channel)
 	add_child(channel)
 	return channel

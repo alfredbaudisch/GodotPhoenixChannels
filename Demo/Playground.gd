@@ -14,11 +14,14 @@ func _ready():
 	phoenix.connect("on_error", self, "_on_Phoenix_socket_error")
 	phoenix.connect("on_connecting", self, "_on_Phoenix_socket_connecting")
 	
-	channel = phoenix.channel("game:abc")
+	channel = phoenix.channel("game:abc", {}, true)
 	channel.connect("on_event", self, "_on_channel_event")
 	channel.connect("on_join_result", self, "_on_channel_join_result")
 	channel.connect("on_error", self, "_on_channel_error")
 	channel.connect("on_close", self, "_on_channel_close")
+	
+	channel.connect("on_presence_join", self, "_on_presence_join")
+	channel.connect("on_presence_leave", self, "_on_presence_leave")
 	
 	get_parent().call_deferred("add_child", phoenix, true)
 	phoenix.connect_socket()
@@ -47,6 +50,12 @@ func _on_channel_error(error):
 	
 func _on_channel_close(closed):
 	print("_on_channel_close:  ", closed)
+	
+func _on_presence_join(key, current_presence, new_presence):
+	print("_on_presence_join:  ", key, current_presence, new_presence)
+	
+func _on_presence_leave(key, current_presence, new_presence):
+	print("_on_presence_leave:  ", key, current_presence, new_presence)
 	
 func _on_Phoenix_socket_connecting(is_connecting):
 	print("_on_Phoenix_socket_connecting: ", " ", is_connecting)
