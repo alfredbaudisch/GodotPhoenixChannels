@@ -115,7 +115,7 @@ size_flags_horizontal = 3
 margin_right = 683.0
 margin_bottom = 24.0
 size_flags_horizontal = 3
-text = "hit"
+text = "ping"
 placeholder_text = "Push: Event Name"
 
 [node name="Payload" type="TextEdit" parent="MainContainer/ControlRoom/Push/EventDetailsContainer"]
