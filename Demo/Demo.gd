@@ -26,7 +26,7 @@ func _enter_tree():
 	get_tree().connect("node_removed", self, "_on_node_removed")
 	
 func _ready():
-	_log.clear()
+	_log.set_text("")
 	_presence_list.clear()
 	_set_socket_status("Not connected")
 	_set_channel_status("Not connected")
@@ -192,7 +192,8 @@ func _list_users():
 
 func _log(message):
 	print(message)
-	_log.add_text(str(message) + "\n")
+	var time = OS.get_time()
+	_log.set_text(str(time.hour) + ":" + str(time.minute) + ":" + str(time.second) + ": " + str(message) + "\n" + _log.get_text())
 
 func _set_socket_status(status):
 	_socket_status.set_text("Socket: " + status)
@@ -231,4 +232,4 @@ func _on_node_removed(node):
 		presence = null
 		
 func _on_ClearLog_pressed():
-	_log.clear()
+	_log.set_text("")

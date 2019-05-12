@@ -102,7 +102,6 @@ margin_bottom = 19.0
 text = "See code for custom connect and join params."
 
 [node name="Push" type="HBoxContainer" parent="MainContainer/ControlRoom"]
-editor/display_folded = true
 margin_top = 88.0
 margin_right = 778.0
 margin_bottom = 196.0
@@ -158,11 +157,13 @@ margin_right = 778.0
 margin_bottom = 210.0
 rect_min_size = Vector2( 0, 10 )
 
-[node name="Log" type="RichTextLabel" parent="MainContainer/ControlRoom"]
+[node name="Log" type="TextEdit" parent="MainContainer/ControlRoom"]
 margin_top = 214.0
 margin_right = 778.0
 margin_bottom = 548.0
 size_flags_vertical = 3
+highlight_current_line = true
+wrap_enabled = true
 
 [node name="BottomSeparator" type="VSplitContainer" parent="MainContainer/ControlRoom"]
 margin_top = 552.0
