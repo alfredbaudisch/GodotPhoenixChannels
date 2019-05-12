@@ -22,6 +22,9 @@ var socket : PhoenixSocket
 var channel : PhoenixChannel
 var presence : PhoenixPresence
 
+func _enter_tree():
+	get_tree().connect("node_removed", self, "_on_node_removed")
+	
 func _ready():
 	_log.clear()
 	_presence_list.clear()
@@ -66,7 +69,7 @@ func _on_Connect_pressed():
 		socket.connect("on_error", self, "_on_Socket_error")
 		socket.connect("on_connecting", self, "_on_Socket_connecting")
 		
-		get_parent().call_deferred("add_child", socket, true)
+		call_deferred("add_child", socket, true)
 		socket.connect_socket()
 	
 	elif socket:
@@ -89,6 +92,7 @@ func _on_Push_pressed():
 	
 	channel.push(event, payload)
 
+	
 #
 # PhoenixSocket events
 #
@@ -198,6 +202,33 @@ func _set_channel_status(status):
 	
 func _set_users_online_title():
 	var title := "Users Online"
-	if channel.is_joined():
+	if channel and channel.is_joined():
 		title += "\n" + channel.get_topic() + "\n==================="
+	else:
+		_presence_list.clear()
 	_users_online.set_text(title)
+	
+func _on_RemoveSocket_pressed():
+	if socket: socket.queue_free()
+
+func _on_RemoveChannel_pressed():
+	if channel: channel.queue_free()
+	
+func _on_node_removed(node):
+	var cast = node as PhoenixChannel
+	var clear_channel := false
+	
+	if cast:
+		clear_channel = true
+	else:
+		cast = node as PhoenixSocket
+		if cast:
+			socket = null
+			clear_channel = true
+			
+	if clear_channel:
+		channel = null
+		presence = null
+		
+func _on_ClearLog_pressed():
+	_log.clear()

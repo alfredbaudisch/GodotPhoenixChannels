@@ -76,6 +76,7 @@ margin_bottom = 24.0
 text = "Connect"
 
 [node name="ChannelJoin" type="HBoxContainer" parent="MainContainer/ControlRoom"]
+editor/display_folded = true
 margin_top = 60.0
 margin_right = 778.0
 margin_bottom = 84.0
@@ -101,12 +102,12 @@ margin_bottom = 19.0
 text = "See code for custom connect and join params."
 
 [node name="Push" type="HBoxContainer" parent="MainContainer/ControlRoom"]
+editor/display_folded = true
 margin_top = 88.0
 margin_right = 778.0
 margin_bottom = 196.0
 
 [node name="EventDetailsContainer" type="VBoxContainer" parent="MainContainer/ControlRoom/Push"]
-editor/display_folded = true
 margin_right = 683.0
 margin_bottom = 108.0
 size_flags_horizontal = 3
@@ -160,10 +161,40 @@ rect_min_size = Vector2( 0, 10 )
 [node name="Log" type="RichTextLabel" parent="MainContainer/ControlRoom"]
 margin_top = 214.0
 margin_right = 778.0
-margin_bottom = 586.0
+margin_bottom = 548.0
 size_flags_vertical = 3
 
 [node name="BottomSeparator" type="VSplitContainer" parent="MainContainer/ControlRoom"]
+margin_top = 552.0
+margin_right = 778.0
+margin_bottom = 562.0
+rect_min_size = Vector2( 0, 10 )
+
+[node name="InstanceContainer" type="HBoxContainer" parent="MainContainer/ControlRoom"]
+margin_top = 566.0
+margin_right = 778.0
+margin_bottom = 586.0
+
+[node name="RemoveSocket" type="Button" parent="MainContainer/ControlRoom/InstanceContainer"]
+margin_right = 139.0
+margin_bottom = 20.0
+custom_colors/font_color = Color( 0.917647, 0.560784, 0.427451, 1 )
+text = "Delete Socket Node"
+
+[node name="RemoveChannel" type="Button" parent="MainContainer/ControlRoom/InstanceContainer"]
+margin_left = 143.0
+margin_right = 291.0
+margin_bottom = 20.0
+custom_colors/font_color = Color( 0.917647, 0.560784, 0.427451, 1 )
+text = "Delete Channel Node"
+
+[node name="ClearLog" type="Button" parent="MainContainer/ControlRoom/InstanceContainer"]
+margin_left = 295.0
+margin_right = 365.0
+margin_bottom = 20.0
+text = "Clear Log"
+
+[node name="BottomSeparator2" type="VSplitContainer" parent="MainContainer/ControlRoom"]
 margin_top = 590.0
 margin_right = 778.0
 margin_bottom = 600.0
@@ -213,3 +244,6 @@ rect_min_size = Vector2( 10, 0 )
 [connection signal="pressed" from="MainContainer/ControlRoom/ServerConnect/Connect" to="." method="_on_Connect_pressed"]
 [connection signal="pressed" from="MainContainer/ControlRoom/ChannelJoin/JoinTopic" to="." method="_on_JoinTopic_pressed"]
 [connection signal="pressed" from="MainContainer/ControlRoom/Push/PushActions/Push" to="." method="_on_Push_pressed"]
+[connection signal="pressed" from="MainContainer/ControlRoom/InstanceContainer/RemoveSocket" to="." method="_on_RemoveSocket_pressed"]
+[connection signal="pressed" from="MainContainer/ControlRoom/InstanceContainer/RemoveChannel" to="." method="_on_RemoveChannel_pressed"]
+[connection signal="pressed" from="MainContainer/ControlRoom/InstanceContainer/ClearLog" to="." method="_on_ClearLog_pressed"]
