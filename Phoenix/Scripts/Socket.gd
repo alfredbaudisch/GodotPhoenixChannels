@@ -279,7 +279,6 @@ func _on_socket_closed(clean):
 func _on_socket_data_received(pid := 1):
 	var packet = _socket.get_peer(1).get_packet()
 	var json = JSON.parse(packet.get_string_from_utf8())
-	print("_on_socket_data_received, %s" % [json.result])
 	
 	if json.result.has("event"):
 		var result = json.result

@@ -1,14 +1,20 @@
 extends Control
 
-onready var _username = get_node("HBoxContainer/ControlRoom/ServerConnect/Username")
-onready var _host = get_node("HBoxContainer/ControlRoom/ServerConnect/Host")
-onready var _connect = get_node("HBoxContainer/ControlRoom/ServerConnect/Connect")
-onready var _topic = get_node("HBoxContainer/ControlRoom/ChannelJoin/Topic")
-onready var _join_topic = get_node("HBoxContainer/ControlRoom/ChannelJoin/JoinTopic")
-onready var _log = get_node("HBoxContainer/ControlRoom/Log")
-onready var _presence_list = get_node("HBoxContainer/Presence/PresenceList")
-onready var _socket_status = get_node("HBoxContainer/ControlRoom/Status/SocketStatus")
-onready var _channel_status = get_node("HBoxContainer/ControlRoom/Status/ChannelSatus")
+onready var _username = get_node("MainContainer/ControlRoom/ServerConnect/Username")
+onready var _host = get_node("MainContainer/ControlRoom/ServerConnect/Host")
+onready var _connect = get_node("MainContainer/ControlRoom/ServerConnect/Connect")
+onready var _topic = get_node("MainContainer/ControlRoom/ChannelJoin/Topic")
+onready var _join_topic = get_node("MainContainer/ControlRoom/ChannelJoin/JoinTopic")
+onready var _log = get_node("MainContainer/ControlRoom/Log")
+onready var _users_online = get_node("MainContainer/Presence/UsersOnline")
+onready var _presence_list = get_node("MainContainer/Presence/PresenceList")
+onready var _socket_status = get_node("MainContainer/ControlRoom/Status/SocketStatus")
+onready var _channel_status = get_node("MainContainer/ControlRoom/Status/ChannelSatus")
+onready var _push_event = get_node("MainContainer/ControlRoom/Push/EventDetailsContainer/EventName")
+onready var _push_payload = get_node("MainContainer/ControlRoom/Push/EventDetailsContainer/Payload")
+onready var _push = get_node("MainContainer/ControlRoom/Push/PushActions/Push")
+onready var _push_container = get_node("MainContainer/ControlRoom/Push")
+onready var _broadcast = get_node("MainContainer/ControlRoom/Push/PushActions/Broadcast")
 
 var users := {}
 
@@ -16,12 +22,16 @@ var socket : PhoenixSocket
 var channel : PhoenixChannel
 var presence : PhoenixPresence
 
+func _enter_tree():
+	get_tree().connect("node_removed", self, "_on_node_removed")
+	
 func _ready():
 	_log.clear()
 	_presence_list.clear()
 	_set_socket_status("Not connected")
 	_set_channel_status("Not connected")
 	_join_topic.set_visible(false)
+	_push_container.set_visible(false)
 	
 func _on_JoinTopic_pressed():
 	if not socket:
@@ -59,7 +69,7 @@ func _on_Connect_pressed():
 		socket.connect("on_error", self, "_on_Socket_error")
 		socket.connect("on_connecting", self, "_on_Socket_connecting")
 		
-		get_parent().call_deferred("add_child", socket, true)
+		call_deferred("add_child", socket, true)
 		socket.connect_socket()
 	
 	elif socket:
@@ -69,7 +79,20 @@ func _on_Connect_pressed():
 			socket.set_endpoint(_host.get_text())
 			socket.set_params({user_id = _username.get_text()})
 			socket.connect_socket()
+			
+func _on_Push_pressed():
+	var event : String = _push_event.get_text()
+	var payload : Dictionary = parse_json(_push_payload.get_text())	
+	
+	# This is not a feature from this client library, instead
+	# it just adds a parameter to the push payload, which the Demo Elixir server
+	# recognizes and then performs a broadcast.
+	if(_broadcast["pressed"]):
+		payload.broadcast = true
+	
+	channel.push(event, payload)
 
+	
 #
 # PhoenixSocket events
 #
@@ -88,12 +111,15 @@ func _on_Socket_close(payload):
 	
 	_connect.set_text("Connect")
 	_join_topic.set_visible(false)
+	_set_users_online_title()
 	
 func _on_Socket_error(payload):
 	_set_socket_status("Errored")
 	_log("_on_Socket_error: " + str(payload))
 	
 	_join_topic.set_visible(false)
+	_push_container.set_visible(false)
+	_set_users_online_title()
 
 func _on_Socket_connecting(is_connecting):
 	if is_connecting:
@@ -107,7 +133,7 @@ func _on_Socket_connecting(is_connecting):
 #
 
 func _on_Channel_event(event, payload, status):
-	_log("_on_Channel_event:  " + event + ", payload: " + str(payload))
+	_log("_on_Channel_event:  " + event + ", status: " + status + ", payload: " + str(payload))
 	
 	if event == PhoenixChannel.PRESENCE_EVENTS.diff:
 		presence.sync_diff(payload)		
@@ -118,21 +144,27 @@ func _on_Channel_join_result(status, result):
 	if status == PhoenixChannel.STATUS.ok:
 		_set_channel_status("Joined - " + channel.get_topic())
 		_join_topic.set_text("Leave Channel")
+		_push_container.set_visible(true)
 	else:
 		_set_channel_status("Not joined")
 		_join_topic.set_text("Join Channel")
-		
+		_push_container.set_visible(false)
+
+	_set_users_online_title()
 	_log("_on_Channel_join_result: " + status + ", " + str(result))
 	
 func _on_Channel_error(error):
 	_log("_on_Channel_error: " + str(error))
 	_set_channel_status("Errored")
 	_join_topic.set_text("Join Channel")
+	_push_container.set_visible(false)
 	
 func _on_Channel_close(closed):
 	_log("_on_Channel_close: " + str(closed))
 	_set_channel_status("Not joined")
 	_join_topic.set_text("Join Channel")
+	_push_container.set_visible(false)
+	_set_users_online_title()
 	
 func _on_Presence_join(joins):
 	for join in joins:
@@ -168,3 +200,35 @@ func _set_socket_status(status):
 func _set_channel_status(status):
 	_channel_status.set_text("Channel: " + status)
 	
+func _set_users_online_title():
+	var title := "Users Online"
+	if channel and channel.is_joined():
+		title += "\n" + channel.get_topic() + "\n==================="
+	else:
+		_presence_list.clear()
+	_users_online.set_text(title)
+	
+func _on_RemoveSocket_pressed():
+	if socket: socket.queue_free()
+
+func _on_RemoveChannel_pressed():
+	if channel: channel.queue_free()
+	
+func _on_node_removed(node):
+	var cast = node as PhoenixChannel
+	var clear_channel := false
+	
+	if cast:
+		clear_channel = true
+	else:
+		cast = node as PhoenixSocket
+		if cast:
+			socket = null
+			clear_channel = true
+			
+	if clear_channel:
+		channel = null
+		presence = null
+		
+func _on_ClearLog_pressed():
+	_log.clear()
