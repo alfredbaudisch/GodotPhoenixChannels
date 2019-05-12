@@ -4,8 +4,6 @@ GodotPhoenixChannels is a GDScript and [Godot Engine](https://godotengine.org) i
 
 Before diving in, if you want to see some crazy numbers about the scalability of Phoenix, check [The Road to 2 Million Websocket Connections in Phoenix](https://phoenixframework.org/blog/the-road-to-2-million-websocket-connections) and [How Discord Scaled Elixir to 5,000,000 Concurrent Users](https://blog.discordapp.com/scaling-elixir-f9b8e1e7c29b).
 
-**ATTENTION: Still under heavy development - expect it to be fully usable by around 15th/May/19.**
-
 ## What is Elixir?
 [Elixir](https://elixir-lang.org/) is a dynamic, functional language designed for building scalable and maintainable applications.
 
@@ -27,73 +25,122 @@ Elixir leverages the Erlang VM, known for running low-latency, distributed and f
 
 This library tries to follow the same design patterns of the official [Phoenix JavaScript client](https://hexdocs.pm/phoenix/js/), but important changes had to be made regarding events, in order to accommodate to GDScript. Godot's [WebSocketClient](https://docs.godotengine.org/en/3.1/classes/class_websocketclient.html) is used as the transport.
 
-Most of the features are already implemented, including Socket reconnection and Channel rejoin timers (similarly to the JS library), but there are some key items still missing. See the [issues](https://github.com/alfredbaudisch/GodotPhoenixChannels/issues).
+### Features
+Almost every feature from the JS official client are implemented:
+
+- Main features of Phoenix Socket (connect, heartbeats, reconnect timers, errors)
+- Main features of Phoenix Channel (join, leave, push, receive, rejoin timers, errors)
+- All features of Presence
+- Automatic disconnection and channel leaving on Node freeing
 
 # Examples
 
 ## Example Godot Project
 
-**ATTENTION**: Still under heavy development - the examples are still not finished.
-
-For examples see the [Demo](./Demo) folder.
+For usage examples see the [Demo](./Demo) project.
 
 ## Example Elixir Project
 
-TODO.
+A simple Elixir server is available in [Demo/Server](./Demo/server).
+
+To run it, have Elixir installed, then:
+```
+cd Demo/server
+mix deps.get
+iex -S mix phx.server
+```
+
+After the server is running, you can run the Godot demo and in the Host field put:
+`ws://localhost:4000/socket`.
 
 ## Example Usage
 ```gdscript
-var phoenix : PhoenixSocket
+var socket : PhoenixSocket
 var channel : PhoenixChannel
+var presence : PhoenixPresence
 
-phoenix = PhoenixSocket.new("ws://localhost:4000/socket", {
+socket = PhoenixSocket.new("ws://localhost:4000/socket", {
   params = {user_id = 10, token = "some_token"}
 })
 
 # Subscribe to Socket events
-phoenix.connect("on_open", self, "_on_Phoenix_socket_open")
-phoenix.connect("on_close", self, "_on_Phoenix_socket_close")
-phoenix.connect("on_error", self, "_on_Phoenix_socket_error")
-phoenix.connect("on_connecting", self, "_on_Phoenix_socket_connecting")
+socket.connect("on_open", self, "_on_Socket_open")
+socket.connect("on_close", self, "_on_Socket_close")
+socket.connect("on_error", self, "_on_Socket_error")
+socket.connect("on_connecting", self, "_on_Socket_connecting")
+
+# If you want to track Presence
+presence = PhoenixPresence.new()
+
+# Subscribe to Presence events (sync_diff and sync_state are also implemented)
+presence.connect("on_join", self, "_on_Presence_join")
+presence.connect("on_leave", self, "_on_Presence_leave")
 
 # Create a Channel
-channel = phoenix.channel("game:abc")
+channel = socket.channel("game:abc", {}, presence)
 
 # Subscribe to Channel events
 channel.connect("on_event", self, "_on_Channel_event")
 channel.connect("on_join_result", self, "_on_Channel_join_result")
+channel.connect("on_error", self, "_on_Channel_error")
+channel.connect("on_close", self, "_on_Channel_close")
 
-get_parent().call_deferred("add_child", phoenix, true)
+call_deferred("add_child", socket, true)
 
 # Connect!
-phoenix.connect_socket()
+socket.connect_socket()
 ```
 
 Then you implement the listeners:
 ```gdscript
-func _on_Phoenix_socket_open(payload):
+#
+# Socket events
+#
+
+func _on_Socket_open(payload):
 	channel.join()
-	print("_on_Phoenix_socket_open: ", " ", payload)
+	print("_on_Socket_open: ", " ", payload)
 
-func _on_Phoenix_socket_close(payload):
-	print("_on_Phoenix_socket_close: ", " ", payload)
+func _on_Socket_close(payload):
+	print("_on_Socket_close: ", " ", payload)
 
-func _on_Phoenix_socket_error(payload):
-	print("_on_Phoenix_socket_error: ", " ", payload)
+func _on_Socket_error(payload):
+	print("_on_Socket_error: ", " ", payload)
+
+func _on_Socket_connecting(is_connecting):
+	print("_on_Socket_connecting: ", " ", is_connecting)
+
+#
+# Channel events
+#
 
 func _on_Channel_event(event, payload, status):
-	print("_on_channel_event:  ", event, ", ", status, ", ", payload)
+	print("_on_Channel_event:  ", event, ", ", status, ", ", payload)
 
 func _on_Channel_join_result(status, result):
-	print("_on_channel_join_result:  ", status, result)
+	print("_on_Channel_join_result:  ", status, result)
 
-func _on_Phoenix_socket_connecting(is_connecting):
-	print("_on_Phoenix_socket_connecting: ", " ", is_connecting)
+func _on_Channel_error(error):
+	print("_on_Channel_error: " + str(error))
+
+func _on_Channel_close(closed):
+	print("_on_Channel_close: " + str(closed))
+
+#
+# Presence events
+#
+
+func _on_Presence_join(joins):
+	print("_on_Presence_join: " + str(joins))
+
+func _on_Presence_leave(leaves):
+	print("_on_Presence_leave: " + str(leaves))
+
 ```
 
 Push messages to the server:
 ```gdscript
-channel.push("topic", {some: "param"})
+channel.push("event_name", {some: "param"})
 ```
 
 Broadcasts and push replies are received in the event `PhoenixChannel.on_event`:
@@ -103,6 +150,12 @@ channel.connect("on_event", self, "_on_Channel_event")
 func _on_Channel_event(event, payload, status):
 	print("_on_channel_event:  ", event, ", ", status, ", ", payload)
 ```
+
+## TODO
+See the [issues](https://github.com/alfredbaudisch/GodotPhoenixChannels/issues), but mostly:
+- [ ] Game example
+- [ ] Channel push buffer
+- [ ] Socket push buffer
 
 ## Additional Facts about Elixir
 
