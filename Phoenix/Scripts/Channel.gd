@@ -53,11 +53,11 @@ func _init(socket, topic : String, params : Dictionary = {}, presence = null):
 	
 	_rejoin_timer = Timer.new()
 	_rejoin_timer.set_autostart(false)
-	_rejoin_timer.connect("timeout", self, "_on_Timer_timeout")
+	var _error = _rejoin_timer.connect("timeout", self, "_on_Timer_timeout")
 	add_child(_rejoin_timer)
 	
 func _exit_tree():
-	leave()
+	var _success = leave()
 	
 	"""
 	Leaving the channel with leave() leads to the chain of events that eventually call on_close,
@@ -85,7 +85,7 @@ func get_topic() -> String:
 
 func leave() -> bool:
 	if !is_leaving() and !is_closed():
-		push(CHANNEL_EVENTS.leave, {})
+		var _success = push(CHANNEL_EVENTS.leave, {})
 		_state = ChannelStates.LEAVING
 		return true
 		
@@ -180,7 +180,7 @@ func trigger(message : PhoenixMessage):
 				var pending_event = _get_pending_ref(message.get_ref())
 				if pending_event:
 					event = pending_event
-					_pending_refs.erase(message.get_ref())
+					var _success = _pending_refs.erase(message.get_ref())
 
 			if event != CHANNEL_EVENTS.leave:
 				emit_signal("on_event", event, message.get_response(), status)
@@ -243,4 +243,4 @@ func _get_pending_ref(ref):
 func _on_Timer_timeout():
 	if _should_rejoin_until_connected:
 		if not _joined_once:
-			_rejoin()
+			var _success = _rejoin()

@@ -35,17 +35,17 @@ static func get_message_from_dictionary(from : Dictionary = {}) -> PhoenixMessag
 	return PhoenixMessage.new(from.topic, from.event, ref, join_ref, from.payload)
 	
 static func map(function: FuncRef, array: Array) -> Array:
-    var o_array := []	
-    for value in array:
-        o_array.append(function.call_func(value))
+	var o_array := []	
+	for value in array:
+		o_array.append(function.call_func(value))
 		
-    return o_array
+	return o_array
 	
 static func filter(function: FuncRef, array: Array) -> Array:
-    var filtered_array := []
+	var filtered_array := []
 
-    for candidate_value in array:
-        if function.call_func(candidate_value):
-            filtered_array.append(candidate_value)
+	for candidate_value in array:
+		if function.call_func(candidate_value):
+			filtered_array.append(candidate_value)
 
-    return filtered_array
+	return filtered_array

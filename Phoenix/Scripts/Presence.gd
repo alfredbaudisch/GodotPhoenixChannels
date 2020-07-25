@@ -82,7 +82,7 @@ func sync_diff(diff : Dictionary) -> Dictionary:
 			})	
 			
 			if current_presence.metas.size() == 0:
-				_state.erase(key)
+				var _success = _state.erase(key)
 	
 	if emit_joins.size() > 0:
 		emit_signal("on_join", emit_joins)
