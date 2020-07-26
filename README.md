@@ -37,7 +37,8 @@ Almost every feature from the JS official client are implemented:
 
 ## Example Godot Project
 
-For usage examples see the [Demo](./Demo) project.
+- For usage examples see the [Demo](./Demo) project.
+- [Godello](https://github.com/alfredbaudisch/Godello) is a complex project made with Godot, GDScript and Elixir, and uses this library.
 
 ## Example Elixir Project
 
