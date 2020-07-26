@@ -8,16 +8,19 @@ const GLOBAL_JOIN_REF := ""
 var _message : Dictionary = {} setget ,to_dictionary
 
 func _init(topic : String, event : String, ref : String = NO_REPLY_REF, join_ref : String = GLOBAL_JOIN_REF, payload : Dictionary = {}):
-	var final_join_ref = join_ref if join_ref != GLOBAL_JOIN_REF else null
-	var final_ref = ref if ref != NO_REPLY_REF else null
-	
 	_message = {
 		topic = topic,
 		event = event,
 		payload = payload,
-		ref = final_ref,
-		join_ref = final_join_ref
+		ref = null,
+		join_ref = null
 	}
+	
+	if join_ref != NO_REPLY_REF:
+		_message.ref = ref
+		
+	if join_ref != GLOBAL_JOIN_REF:
+		_message.join_ref = join_ref
 
 func get_topic() -> String: return _message.topic
 func get_event() -> String: return _message.event

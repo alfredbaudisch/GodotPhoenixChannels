@@ -69,14 +69,14 @@ func _init(endpoint, opts = {}):
 	set_endpoint(endpoint)	
 
 func _ready():
-	_socket.connect("connection_established", self, "_on_socket_connected")
-	_socket.connect("connection_error", self, "_on_socket_error")
-	_socket.connect("connection_closed", self, "_on_socket_closed")
-	_socket.connect("data_received", self, "_on_socket_data_received")
+	var _error = _socket.connect("connection_established", self, "_on_socket_connected")
+	_error = _socket.connect("connection_error", self, "_on_socket_error")
+	_error = _socket.connect("connection_closed", self, "_on_socket_closed")
+	_error = _socket.connect("data_received", self, "_on_socket_data_received")
 	
 	set_process(true)
 	
-func _process(delta):
+func _process(_delta):
 	var status = _socket.get_connection_status()
 
 	if status != _last_status:
@@ -107,7 +107,7 @@ func _process(delta):
 	_socket.poll()
 	
 func _enter_tree():
-	get_tree().connect("node_removed", self, "_on_node_removed")
+	var _error = get_tree().connect("node_removed", self, "_on_node_removed")
 	
 func _exit_tree():
 	var payload = {message = "exit tree"}
@@ -131,7 +131,7 @@ func connect_socket():
 	_socket.verify_ssl = false
 	
 	_endpoint_url = PhoenixUtils.add_url_params(_settings.endpoint, _settings.params)
-	_socket.connect_to_url(_endpoint_url)
+	var _error = _socket.connect_to_url(_endpoint_url)
 	
 func disconnect_socket():	
 	_close(true, {message = "disconnect requested"})
@@ -152,7 +152,7 @@ func set_endpoint(endpoint : String):
 func set_params(params : Dictionary = {}):
 	_settings.params = params
 	
-func can_push(event : String) -> bool:
+func can_push(_event : String) -> bool:
 	return is_connected
 	
 func channel(topic : String, params : Dictionary = {}, presence = null) -> PhoenixChannel:
@@ -175,7 +175,7 @@ func push(message : PhoenixMessage):
 	var dict = message.to_dictionary()
 	
 	if can_push(dict.event):	
-		_socket.get_peer(1).put_packet(to_json(dict).to_utf8())		
+		var _error = _socket.get_peer(1).put_packet(to_json(dict).to_utf8())		
 		
 func make_ref() -> String:
 	_ref = _ref + 1
@@ -238,7 +238,7 @@ func _find_and_remove_channel(channel : PhoenixChannel):
 # Listeners
 #
 
-func _on_socket_connected(protocol):
+func _on_socket_connected(_protocol):
 	_socket.get_peer(1).set_write_mode(WRITE_MODE)
 	
 	_connected_at = OS.get_ticks_msec()
@@ -259,7 +259,7 @@ func _on_socket_error(reason = null):
 	
 	emit_signal("on_error", _last_close_reason)
 		
-func _on_socket_closed(clean):
+func _on_socket_closed(_clean):
 	if not _requested_disconnect:
 		_should_reconnect = true	
 	
@@ -276,12 +276,11 @@ func _on_socket_closed(clean):
 
 	emit_signal("on_close", payload)	
 	
-func _on_socket_data_received(pid := 1):
+func _on_socket_data_received(_pid := 1):
 	var packet = _socket.get_peer(1).get_packet()
 	var json = JSON.parse(packet.get_string_from_utf8())
 	
 	if json.result.has("event"):
-		var result = json.result
 		var message = PhoenixUtils.get_message_from_dictionary(json.result)
 		var ref = message.get_ref()
 		
