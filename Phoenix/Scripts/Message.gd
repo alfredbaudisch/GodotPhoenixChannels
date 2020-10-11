@@ -16,7 +16,7 @@ func _init(topic : String, event : String, ref : String = NO_REPLY_REF, join_ref
 		join_ref = null
 	}
 	
-	if join_ref != NO_REPLY_REF:
+	if ref != NO_REPLY_REF:
 		_message.ref = ref
 		
 	if join_ref != GLOBAL_JOIN_REF:
