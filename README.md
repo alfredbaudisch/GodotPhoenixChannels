@@ -158,8 +158,8 @@ See the [issues](https://github.com/alfredbaudisch/GodotPhoenixChannels/issues),
 - [ ] Channel push buffer
 - [ ] Socket push buffer
 
-## Additional Facts about Elixir
+## Additional facts about Elixir
 
-As it was shown above, Elixir leverages the [Erlang VM](https://en.wikipedia.org/wiki/Erlang_(programming_language)), which itself is a programming language used to build massively scalable soft real-time systems with requirements on high availability. Some of its uses are in telecoms, banking, e-commerce, computer telephony and instant messaging. Erlang's runtime system has built-in support for concurrency, distribution and fault tolerance.
+As it was shown above, Elixir leverages [Erlang](https://en.wikipedia.org/wiki/Erlang_(programming_language)), which itself is a programming language used to build massively scalable soft real-time systems with requirements on high availability. Some of its uses are in telecoms, banking, e-commerce, computer telephony and instant messaging. Erlang's runtime system has built-in support for concurrency, distribution and fault tolerance.
 
 Erlang is some 30 years old, built by Ericsson. To give you some context: Ericsson has 45% of the mobile satellite infrastructure in the world. If you are using data in your mobile phone you are certainly in some stage of the day using an equipment that uses Erlang ([Source](https://www.youtube.com/watch?v=Zf51VOjIVCQ)).
