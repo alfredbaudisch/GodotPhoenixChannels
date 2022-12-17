@@ -8,9 +8,8 @@ defmodule GodotServer.Application do
 
     # Define workers and child supervisors to be supervised
     children = [
-      # Start the Ecto repository
-      supervisor(GodotServer.Repo, []),
       # Start the endpoint when the application starts
+      {Phoenix.PubSub, name: GodotServer.PubSub},
       supervisor(GodotServerWeb.Endpoint, []),
       # Start your own worker by calling: GodotServer.Worker.start_link(arg1, arg2, arg3)
       # worker(GodotServer.Worker, [arg1, arg2, arg3]),

@@ -29,7 +29,6 @@ margin_bottom = 10.0
 rect_min_size = Vector2( 0, 10 )
 
 [node name="Status" type="HBoxContainer" parent="MainContainer/ControlRoom"]
-editor/display_folded = true
 margin_top = 14.0
 margin_right = 778.0
 margin_bottom = 28.0
@@ -49,7 +48,6 @@ size_flags_horizontal = 3
 text = "Channel: Closed"
 
 [node name="ServerConnect" type="HBoxContainer" parent="MainContainer/ControlRoom"]
-editor/display_folded = true
 margin_top = 32.0
 margin_right = 778.0
 margin_bottom = 56.0
@@ -76,7 +74,6 @@ margin_bottom = 24.0
 text = "Connect"
 
 [node name="ChannelJoin" type="HBoxContainer" parent="MainContainer/ControlRoom"]
-editor/display_folded = true
 margin_top = 60.0
 margin_right = 778.0
 margin_bottom = 84.0
