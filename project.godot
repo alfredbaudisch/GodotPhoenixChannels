@@ -6,34 +6,34 @@
 ;   [section] ; section goes between []
 ;   param=value ; assign values to parameters
 
-config_version=4
+config_version=5
 
-_global_script_classes=[ {
+_global_script_classes=[{
 "base": "Node",
-"class": "PhoenixChannel",
-"language": "GDScript",
+"class": &"PhoenixChannel",
+"language": &"GDScript",
 "path": "res://Phoenix/Scripts/Channel.gd"
 }, {
 "base": "Node",
-"class": "PhoenixMessage",
-"language": "GDScript",
+"class": &"PhoenixMessage",
+"language": &"GDScript",
 "path": "res://Phoenix/Scripts/Message.gd"
 }, {
 "base": "Node",
-"class": "PhoenixPresence",
-"language": "GDScript",
+"class": &"PhoenixPresence",
+"language": &"GDScript",
 "path": "res://Phoenix/Scripts/Presence.gd"
 }, {
 "base": "Node",
-"class": "PhoenixSocket",
-"language": "GDScript",
+"class": &"PhoenixSocket",
+"language": &"GDScript",
 "path": "res://Phoenix/Scripts/Socket.gd"
 }, {
 "base": "Node",
-"class": "PhoenixUtils",
-"language": "GDScript",
+"class": &"PhoenixUtils",
+"language": &"GDScript",
 "path": "res://Phoenix/Scripts/Utils.gd"
-} ]
+}]
 _global_script_class_icons={
 "PhoenixChannel": "",
 "PhoenixMessage": "",
@@ -46,6 +46,7 @@ _global_script_class_icons={
 
 config/name="Phoenix Channels"
 run/main_scene="res://Demo/Demo.tscn"
+config/features=PackedStringArray("4.0")
 config/icon="res://icon.png"
 
 [rendering]

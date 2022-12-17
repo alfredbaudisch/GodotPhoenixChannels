@@ -1,5 +1,4 @@
 extends Node
-
 class_name PhoenixChannel
 
 const DEFAULT_REJOIN_AFTER_SECONDS := [1, 2, 5, 10]
@@ -30,7 +29,7 @@ signal on_error(error)
 signal on_close(params)	
 
 var _state = ChannelStates.CLOSED
-var _topic := "" setget set_topic,get_topic
+var _topic := "" : get = get_topic, set = set_topic
 var _params := {}
 var _joined_once := false
 var _socket
@@ -43,7 +42,7 @@ var _rejoin_pos := -1
 
 var _presence : PhoenixPresence
 
-func _init(socket, topic : String, params : Dictionary = {}, presence = null):
+func _init(socket,topic : String,params : Dictionary = {},presence = null):
 	assert(topic != TOPIC_PHOENIX)
 	_socket = socket
 	_topic = topic
@@ -53,7 +52,7 @@ func _init(socket, topic : String, params : Dictionary = {}, presence = null):
 	
 	_rejoin_timer = Timer.new()
 	_rejoin_timer.set_autostart(false)
-	var _error = _rejoin_timer.connect("timeout", self, "_on_Timer_timeout")
+	var _error = _rejoin_timer.connect("timeout",Callable(self,"_on_Timer_timeout"))
 	add_child(_rejoin_timer)
 	
 func _exit_tree():

@@ -1,19 +1,18 @@
 extends Node
-
 class_name PhoenixMessage
 
 const NO_REPLY_REF := ""
 const GLOBAL_JOIN_REF := ""
 
-var _message : Dictionary = {} setget ,to_dictionary
+var _message : Dictionary = {} : get = to_dictionary
 
-func _init(topic : String, event : String, ref : String = NO_REPLY_REF, join_ref : String = GLOBAL_JOIN_REF, payload : Dictionary = {}):
+func _init(topic : String,event : String,ref : String = NO_REPLY_REF,join_ref : String = GLOBAL_JOIN_REF,payload : Dictionary = {}):
 	_message = {
 		topic = topic,
 		event = event,
 		payload = payload,
-		ref = null,
-		join_ref = null
+		ref = ref,
+		join_ref = join_ref
 	}
 	
 	if ref != NO_REPLY_REF:

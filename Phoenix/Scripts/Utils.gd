@@ -6,7 +6,7 @@ static func add_trailing_slash(value: String) -> String:
 	return value if value.ends_with("/") else value + "/"
 
 static func add_url_params(url: String, params: Dictionary = {}) -> String:
-	if not params or (params and params.size() == 0):
+	if params.size() == 0:
 		return url
 	
 	if "?" in url:
@@ -18,7 +18,7 @@ static func add_url_params(url: String, params: Dictionary = {}) -> String:
 	var pos = 0
 	for key in params:
 		if pos > 0: url += "&"
-		url += key + "=" + str(params[key]).percent_encode()
+		url += key + "=" + str(params[key]).uri_encode()
 		pos += 1
 		
 	return url
@@ -34,18 +34,18 @@ static func get_message_from_dictionary(from : Dictionary = {}) -> PhoenixMessag
 	var ref = from.ref if from.ref else PhoenixMessage.NO_REPLY_REF	
 	return PhoenixMessage.new(from.topic, from.event, ref, join_ref, from.payload)
 	
-static func map(function: FuncRef, array: Array) -> Array:
+static func map(function: Callable, array: Array) -> Array:
 	var o_array := []	
 	for value in array:
-		o_array.append(function.call_func(value))
+		o_array.append(function.call(value))
 		
 	return o_array
 	
-static func filter(function: FuncRef, array: Array) -> Array:
+static func filter(function: Callable, array: Array) -> Array:
 	var filtered_array := []
 
 	for candidate_value in array:
-		if function.call_func(candidate_value):
+		if function.call(candidate_value):
 			filtered_array.append(candidate_value)
 
 	return filtered_array

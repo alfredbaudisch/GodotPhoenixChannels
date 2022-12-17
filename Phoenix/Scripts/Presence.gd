@@ -1,11 +1,10 @@
 extends Node
-
 class_name PhoenixPresence
 
 signal on_join(key, current_presence, new_presence)
 signal on_leave(key, current_presence, left_presence)
 
-var _state := {} setget ,get_state	
+var _state := {} : get = get_state
 
 func sync_state(new_state : Dictionary) -> Dictionary:		
 	var joins := {}
@@ -22,8 +21,8 @@ func sync_state(new_state : Dictionary) -> Dictionary:
 		
 		if _state.has(key):
 			var current_presence = _state[key]
-			var new_refs := PhoenixUtils.map(funcref(self, "_get_phx_ref"), new_presence)
-			var curr_refs := PhoenixUtils.map(funcref(self, "_get_phx_ref"), current_presence)
+			var new_refs := PhoenixUtils.map(Callable(self, "_get_phx_ref"), new_presence)
+			var curr_refs := PhoenixUtils.map(Callable(self, "_get_phx_ref"), current_presence)
 			
 			var joined_metas := _find_metas_from_refs(new_presence.metas, curr_refs)
 			var left_metas := _find_metas_from_refs(current_presence.metas, new_refs)
@@ -72,7 +71,7 @@ func sync_diff(diff : Dictionary) -> Dictionary:
 		
 		if _state.has(key):
 			var current_presence = _state[key]				
-			var refs_to_remove = PhoenixUtils.map(funcref(self, "_get_phx_ref"), left_presence.metas)				
+			var refs_to_remove = PhoenixUtils.map(Callable(self, "_get_phx_ref"), left_presence.metas)				
 			current_presence.metas = _find_metas_from_refs(current_presence.metas, refs_to_remove)
 			
 			emit_leaves.append({
@@ -92,11 +91,11 @@ func sync_diff(diff : Dictionary) -> Dictionary:
 	
 	return _state
 	
-func list(chooser : FuncRef = null):
+func list(chooser : Callable = null):
 	if chooser:
 		var sorted := []		
 		for key in _state.keys():
-			sorted.append(chooser.call_func(key, _state[key]))
+			sorted.append(chooser.call(key, _state[key]))
 						
 		return sorted
 	

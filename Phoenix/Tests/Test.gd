@@ -41,7 +41,7 @@ func _run_utils_tests():
 	test(filtered.size() == 2 and filtered[0].number == 1 and filtered[1].number == 2)
 	
 	filtered = PhoenixUtils.filter(funcref(self, "filter_with_number"), [{ref = "1"}, {ref = "godot"}, {ref = "phoenix"}, {}])
-	test(filtered.empty())
+	test(filtered.is_empty())
 	
 func get_dict_ref(value):
 	return value.ref if value.has("ref") else value.name

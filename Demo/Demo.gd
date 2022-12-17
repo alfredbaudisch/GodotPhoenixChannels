@@ -1,20 +1,20 @@
 extends Control
 
-onready var _username = get_node("MainContainer/ControlRoom/ServerConnect/Username")
-onready var _host = get_node("MainContainer/ControlRoom/ServerConnect/Host")
-onready var _connect = get_node("MainContainer/ControlRoom/ServerConnect/Connect")
-onready var _topic = get_node("MainContainer/ControlRoom/ChannelJoin/Topic")
-onready var _join_topic = get_node("MainContainer/ControlRoom/ChannelJoin/JoinTopic")
-onready var _log = get_node("MainContainer/ControlRoom/Log")
-onready var _users_online = get_node("MainContainer/Presence/UsersOnline")
-onready var _presence_list = get_node("MainContainer/Presence/PresenceList")
-onready var _socket_status = get_node("MainContainer/ControlRoom/Status/SocketStatus")
-onready var _channel_status = get_node("MainContainer/ControlRoom/Status/ChannelSatus")
-onready var _push_event = get_node("MainContainer/ControlRoom/Push/EventDetailsContainer/EventName")
-onready var _push_payload = get_node("MainContainer/ControlRoom/Push/EventDetailsContainer/Payload")
-onready var _push = get_node("MainContainer/ControlRoom/Push/PushActions/Push")
-onready var _push_container = get_node("MainContainer/ControlRoom/Push")
-onready var _broadcast = get_node("MainContainer/ControlRoom/Push/PushActions/Broadcast")
+@onready var _username = get_node("MainContainer/ControlRoom/ServerConnect/Username")
+@onready var _host = get_node("MainContainer/ControlRoom/ServerConnect/Host")
+@onready var _connect = get_node("MainContainer/ControlRoom/ServerConnect/Connect")
+@onready var _topic = get_node("MainContainer/ControlRoom/ChannelJoin/Topic")
+@onready var _join_topic = get_node("MainContainer/ControlRoom/ChannelJoin/JoinTopic")
+@onready var _log = get_node("MainContainer/ControlRoom/Log")
+@onready var _users_online = get_node("MainContainer/Presence/UsersOnline")
+@onready var _presence_list = get_node("MainContainer/Presence/PresenceList")
+@onready var _socket_status = get_node("MainContainer/ControlRoom/Status/SocketStatus")
+@onready var _channel_status = get_node("MainContainer/ControlRoom/Status/ChannelSatus")
+@onready var _push_event = get_node("MainContainer/ControlRoom/Push/EventDetailsContainer/EventName")
+@onready var _push_payload = get_node("MainContainer/ControlRoom/Push/EventDetailsContainer/Payload")
+@onready var _push = get_node("MainContainer/ControlRoom/Push/PushActions/Push")
+@onready var _push_container = get_node("MainContainer/ControlRoom/Push")
+@onready var _broadcast = get_node("MainContainer/ControlRoom/Push/PushActions/Broadcast")
 
 var users := {}
 
@@ -23,7 +23,7 @@ var channel : PhoenixChannel
 var presence : PhoenixPresence
 
 func _enter_tree():
-	get_tree().connect("node_removed", self, "_on_node_removed")
+	get_tree().connect("node_removed", _on_node_removed)
 	
 func _ready():
 	_log.set_text("")
@@ -35,22 +35,22 @@ func _ready():
 	
 func _on_JoinTopic_pressed():
 	if not socket:
-		_log("No socket, can't join a channel")
+		_print_log("No socket, can't join a channel")
 	
 	else:
 		if not channel:
 			if not presence:
 				presence = PhoenixPresence.new()
 				
-				presence.connect("on_join", self, "_on_Presence_join")
-				presence.connect("on_leave", self, "_on_Presence_leave")
+				presence.connect("on_join", _on_Presence_join)
+				presence.connect("on_leave", _on_Presence_leave)
 			
 			channel = socket.channel(_topic.get_text(), {}, presence)
 			
-			channel.connect("on_event", self, "_on_Channel_event")
-			channel.connect("on_join_result", self, "_on_Channel_join_result")
-			channel.connect("on_error", self, "_on_Channel_error")
-			channel.connect("on_close", self, "_on_Channel_close")
+			channel.connect("on_event", _on_Channel_event)
+			channel.connect("on_join_result", _on_Channel_join_result)
+			channel.connect("on_error", _on_Channel_error)
+			channel.connect("on_close", _on_Channel_close)
 				
 		if channel.is_joined():
 			channel.leave()
@@ -64,10 +64,10 @@ func _on_Connect_pressed():
 			params = {user_id = _username.get_text()}
 		})
 		
-		socket.connect("on_open", self, "_on_Socket_open")
-		socket.connect("on_close", self, "_on_Socket_close")
-		socket.connect("on_error", self, "_on_Socket_error")
-		socket.connect("on_connecting", self, "_on_Socket_connecting")
+		socket.connect("on_open", _on_Socket_open)
+		socket.connect("on_close", _on_Socket_close)
+		socket.connect("on_error", _on_Socket_error)
+		socket.connect("on_connecting", _on_Socket_connecting)
 		
 		call_deferred("add_child", socket, true)
 		socket.connect_socket()
@@ -82,7 +82,9 @@ func _on_Connect_pressed():
 			
 func _on_Push_pressed():
 	var event : String = _push_event.get_text()
-	var payload : Dictionary = parse_json(_push_payload.get_text())	
+	var test_json_conv = JSON.new()
+	test_json_conv.parse(_push_payload.get_text())	
+	var payload : Dictionary = test_json_conv.get_data()
 	
 	# This is not a feature from this client library, instead
 	# it just adds a parameter to the push payload, which the Demo Elixir server
@@ -100,14 +102,14 @@ func _on_Push_pressed():
 func _on_Socket_open(payload):	
 	_set_socket_status("Connected / Open")	
 	_set_channel_status("Not joined")
-	_log("_on_Socket_open: " + str(payload))
+	_print_log("_on_Socket_open: " + str(payload))
 	
 	_connect.set_text("Disconnect")
 	_join_topic.set_visible(true)
 	
 func _on_Socket_close(payload):
 	_set_socket_status("Closed / Disconnected")
-	_log("_on_Socket_close: " + str(payload))
+	_print_log("_on_Socket_close: " + str(payload))
 	
 	_connect.set_text("Connect")
 	_join_topic.set_visible(false)
@@ -115,7 +117,7 @@ func _on_Socket_close(payload):
 	
 func _on_Socket_error(payload):
 	_set_socket_status("Errored")
-	_log("_on_Socket_error: " + str(payload))
+	_print_log("_on_Socket_error: " + str(payload))
 	
 	_join_topic.set_visible(false)
 	_push_container.set_visible(false)
@@ -126,14 +128,14 @@ func _on_Socket_connecting(is_connecting):
 		_set_socket_status("Connecting...")
 		_join_topic.set_visible(false)
 		
-	_log("_on_Socket_connecting: " + str(is_connecting))	
+	_print_log("_on_Socket_connecting: " + str(is_connecting))	
 	
 #
 # PhoenixChannel events
 #
 
 func _on_Channel_event(event, payload, status):
-	_log("_on_Channel_event:  " + event + ", status: " + status + ", payload: " + str(payload))
+	_print_log("_on_Channel_event:  " + event + ", status: " + status + ", payload: " + str(payload))
 	
 	if event == PhoenixChannel.PRESENCE_EVENTS.diff:
 		presence.sync_diff(payload)		
@@ -151,16 +153,16 @@ func _on_Channel_join_result(status, result):
 		_push_container.set_visible(false)
 
 	_set_users_online_title()
-	_log("_on_Channel_join_result: " + status + ", " + str(result))
+	_print_log("_on_Channel_join_result: " + status + ", " + str(result))
 	
 func _on_Channel_error(error):
-	_log("_on_Channel_error: " + str(error))
+	_print_log("_on_Channel_error: " + str(error))
 	_set_channel_status("Errored")
 	_join_topic.set_text("Join Channel")
 	_push_container.set_visible(false)
 	
 func _on_Channel_close(closed):
-	_log("_on_Channel_close: " + str(closed))
+	_print_log("_on_Channel_close: " + str(closed))
 	_set_channel_status("Not joined")
 	_join_topic.set_text("Join Channel")
 	_push_container.set_visible(false)
@@ -171,14 +173,14 @@ func _on_Presence_join(joins):
 		if not users.has(join.key):
 			users[join.key] = join.key
 	_list_users()
-	_log("_on_Presence_join: " + str(joins))
+	_print_log("_on_Presence_join: " + str(joins))
 	
 func _on_Presence_leave(leaves):
 	for leave in leaves:
 		if users.has(leave.key):
 			users.erase(leave.key)
 	_list_users()
-	_log("_on_Presence_leave: " + str(leaves))
+	_print_log("_on_Presence_leave: " + str(leaves))
 
 #
 # Utils
@@ -190,9 +192,9 @@ func _list_users():
 		list += "- " + user + "\n"	
 	_presence_list.set_text(list)
 
-func _log(message):
+func _print_log(message):
 	print(message)
-	var time = OS.get_time()
+	var time = Time.get_time_dict_from_system()
 	_log.set_text(str(time.hour) + ":" + str(time.minute) + ":" + str(time.second) + ": " + str(message) + "\n" + _log.get_text())
 
 func _set_socket_status(status):
