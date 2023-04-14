@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://du7w26w4myw4x"]
 
-[ext_resource type="Script" path="res://Demo/Demo.gd" id="1"]
+[ext_resource type="Script" path="res://demo/demo.gd" id="1_6ln23"]
 
 [node name="Demo" type="Control"]
 layout_mode = 3
@@ -9,7 +9,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1")
+script = ExtResource("1_6ln23")
 
 [node name="MainContainer" type="HBoxContainer" parent="."]
 layout_mode = 1

@@ -1,6 +1,5 @@
-extends Node
-
 class_name PhoenixUtils
+extends Node
 
 static func add_trailing_slash(value: String) -> String:
 	return value if value.ends_with("/") else value + "/"

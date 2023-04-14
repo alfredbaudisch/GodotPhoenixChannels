@@ -8,40 +8,6 @@
 
 config_version=5
 
-_global_script_classes=[{
-"base": "Node",
-"class": &"PhoenixChannel",
-"language": &"GDScript",
-"path": "res://Phoenix/Scripts/Channel.gd"
-}, {
-"base": "Node",
-"class": &"PhoenixMessage",
-"language": &"GDScript",
-"path": "res://Phoenix/Scripts/Message.gd"
-}, {
-"base": "Node",
-"class": &"PhoenixPresence",
-"language": &"GDScript",
-"path": "res://Phoenix/Scripts/Presence.gd"
-}, {
-"base": "Node",
-"class": &"PhoenixSocket",
-"language": &"GDScript",
-"path": "res://Phoenix/Scripts/Socket.gd"
-}, {
-"base": "Node",
-"class": &"PhoenixUtils",
-"language": &"GDScript",
-"path": "res://Phoenix/Scripts/Utils.gd"
-}]
-_global_script_class_icons={
-"PhoenixChannel": "",
-"PhoenixMessage": "",
-"PhoenixPresence": "",
-"PhoenixSocket": "",
-"PhoenixUtils": ""
-}
-
 [application]
 
 config/name="Phoenix Channels"

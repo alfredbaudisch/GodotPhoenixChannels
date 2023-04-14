@@ -1,5 +1,5 @@
-extends Node
 class_name PhoenixChannel
+extends Node
 
 const DEFAULT_REJOIN_AFTER_SECONDS := [1, 2, 5, 10]
 

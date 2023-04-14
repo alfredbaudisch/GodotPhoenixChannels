@@ -1,5 +1,14 @@
-extends Node
 class_name PhoenixSocket
+extends Node
+
+#
+# Signals
+#
+
+signal on_open(params)
+signal on_error(data)
+signal on_close()
+signal on_connecting(is_connecting)
 
 #
 # Socket Members
@@ -22,11 +31,6 @@ const STATUS = {
 	error = "error",
 	timeout = "timeout"
 }
-
-signal on_open(params)
-signal on_error(data)
-signal on_close()
-signal on_connecting(is_connecting)
 
 var _socket := WebSocketPeer.new()
 var _channels := []
@@ -68,11 +72,6 @@ func _init(endpoint,opts = {}):
 	set_endpoint(endpoint)	
 
 func _ready():
-	var _error = _socket.connect("connection_established", _on_socket_connected)
-	_error = _socket.connect("connection_error", _on_socket_error)
-	_error = _socket.connect("connection_closed", _on_socket_closed)
-	_error = _socket.connect("data_received", _on_socket_data_received)
-	
 	set_process(true)
 	
 func _process(_delta):
@@ -143,7 +142,7 @@ func connect_socket():
 		return
 	
 	_endpoint_url = PhoenixUtils.add_url_params(_settings.endpoint, _settings.params)
-	_socket.connect_to_url(_endpoint_url, false)
+	_socket.connect_to_url(_endpoint_url)
 	
 func disconnect_socket():	
 	_close(true, {message = "disconnect requested"})

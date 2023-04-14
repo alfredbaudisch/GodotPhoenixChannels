@@ -18,29 +18,29 @@ func _run_utils_tests():
 	test(url == result)
 	
 	result = PhoenixUtils.add_url_params(url + "/", {foo = true})
-	test(result == url + "/?foo=True")
+	test(result == url + "/?foo=true")
 	
 	result = PhoenixUtils.add_url_params(url + "/?param=random&", {foo = true})
-	test(result == url + "/?param=random&foo=True")
+	test(result == url + "/?param=random&foo=true")
 	
 	result = PhoenixUtils.add_url_params(url, {foo = true})
-	test(result == url + "?foo=True")
+	test(result == url + "?foo=true")
 	
-	result = PhoenixUtils.add_url_params(result, {bar = "baz", "number": 12.5})
-	test(result == url + "?foo=True&bar=baz&number=12.5")
+	result = PhoenixUtils.add_url_params(result, {bar = "baz", "number" = 12.5})
+	test(result == url + "?foo=true&bar=baz&number=12.5")
 	
 	var mapped := []
-	mapped = PhoenixUtils.map(funcref(self, "get_dict_ref"), [{ref = "1", foo = "bar"}, {ref = "godot"}])
+	mapped = PhoenixUtils.map(Callable(self, "get_dict_ref"), [{ref = "1", foo = "bar"}, {ref = "godot"}])
 	test(mapped == ["1", "godot"])
 	
-	mapped = PhoenixUtils.map(funcref(self, "get_dict_ref"), [{ref = "1", foo = "bar"}, {name = "godot"}])
+	mapped = PhoenixUtils.map(Callable(self, "get_dict_ref"), [{ref = "1", foo = "bar"}, {name = "godot"}])
 	test(mapped == ["1", "godot"])	
 	
 	var filtered := []
-	filtered = PhoenixUtils.filter(funcref(self, "filter_with_number"), [{ref = "1", number = 1}, {ref = "godot"}, {ref = "phoenix", number = 2}])
+	filtered = PhoenixUtils.filter(Callable(self, "filter_with_number"), [{ref = "1", number = 1}, {ref = "godot"}, {ref = "phoenix", number = 2}])
 	test(filtered.size() == 2 and filtered[0].number == 1 and filtered[1].number == 2)
 	
-	filtered = PhoenixUtils.filter(funcref(self, "filter_with_number"), [{ref = "1"}, {ref = "godot"}, {ref = "phoenix"}, {}])
+	filtered = PhoenixUtils.filter(Callable(self, "filter_with_number"), [{ref = "1"}, {ref = "godot"}, {ref = "phoenix"}, {}])
 	test(filtered.is_empty())
 	
 func get_dict_ref(value):

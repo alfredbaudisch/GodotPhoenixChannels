@@ -1,5 +1,5 @@
-extends Node
 class_name PhoenixMessage
+extends Node
 
 const NO_REPLY_REF := ""
 const GLOBAL_JOIN_REF := ""
