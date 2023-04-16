@@ -1,5 +1,5 @@
-extends Node
 class_name PhoenixPresence
+extends Node
 
 signal on_join(key, current_presence, new_presence)
 signal on_leave(key, current_presence, left_presence)
@@ -91,7 +91,7 @@ func sync_diff(diff : Dictionary) -> Dictionary:
 	
 	return _state
 	
-func list(chooser : Callable = null):
+func list(chooser : Callable):
 	if chooser:
 		var sorted := []		
 		for key in _state.keys():
