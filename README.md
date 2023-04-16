@@ -4,7 +4,7 @@ GodotPhoenixChannels is a GDScript and [Godot Engine](https://godotengine.org) i
 
 ## Godot 3.* and Godot 4.0
 - The master branch contains the implementation and demo for Godot 3.5+
-- The [4.0 branch](https://github.com/alfredbaudisch/GodotPhoenixChannels/tree/4.0) contains the implementation for Godot 4.0-beta8+. Support for 4.0 is untested, so please report any Issues you may come accross.
+- The [4.0 branch](https://github.com/alfredbaudisch/GodotPhoenixChannels/tree/4.0) contains the implementation for Godot 4.0.2-stable. Support for 4.0 is untested, so please report any Issues you may come accross.
 
 ## Introduction
 Before diving in, if you want to see some crazy numbers about the scalability of Phoenix, check [The Road to 2 Million Websocket Connections in Phoenix](https://phoenixframework.org/blog/the-road-to-2-million-websocket-connections) and [How Discord Scaled Elixir to 5,000,000 Concurrent Users](https://blog.discordapp.com/scaling-elixir-f9b8e1e7c29b).
