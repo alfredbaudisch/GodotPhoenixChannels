@@ -1,4 +1,4 @@
-# Phoenix Channels Client for Godot and GDScript ![Godot 3.3](https://img.shields.io/badge/godot-v3.3-%23478cbf) ![Godot 4.0](https://img.shields.io/badge/godot-v4.0-beta8)
+# Phoenix Channels Client for Godot and GDScript ![Godot 3.*](https://img.shields.io/badge/godot-v3.*-%23478cbf) ![Godot 4.0](https://img.shields.io/badge/godot-v4.0-%23478cbf)
 
 GodotPhoenixChannels is a GDScript and [Godot Engine](https://godotengine.org) implementation for the Channels API of the [Phoenix Framework](http://www.phoenixframework.org/). It enables Godot projects and games to connect to Phoenix Channels to leverage the connected massive real-time capabilities of Elixir and Phoenix backends. Compatible with Godot 3.* and Godot 4.0.
 
