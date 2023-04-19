@@ -1,10 +1,20 @@
 # Phoenix Channels Client for Godot and GDScript ![Godot 3.*](https://img.shields.io/badge/godot-v3.*-%23478cbf) ![Godot 4.0](https://img.shields.io/badge/godot-v4.0-%23478cbf)
 
+[![Donate using PayPal](https://raw.githubusercontent.com/laurent22/joplin/dev/Assets/WebsiteAssets/images/badges/Donate-PayPal-green.svg)](https://www.paypal.com/donate?hosted_button_id=FC5FTRRE3548C) [![Become a patron](https://raw.githubusercontent.com/laurent22/joplin/dev/Assets/WebsiteAssets/images/badges/Patreon-Badge.svg)](https://www.patreon.com/alfredbaudisch) <a href='https://ko-fi.com/alfredbaudisch' target='_blank'><img height='22' style='border:0px;height:22px;' src='https://az743702.vo.msecnd.net/cdn/kofi3.png?v=0' border='0' alt='Buy Me a Coffee at ko-fi.com' title='Buy Me a Coffee at ko-fi.com' /></a>
+
+<p align="center">
+  <img width="512" height="512" src="https://i.imgur.com/h75l4l7.png">
+</p>
+
 GodotPhoenixChannels is a GDScript and [Godot Engine](https://godotengine.org) implementation for the Channels API of the [Phoenix Framework](http://www.phoenixframework.org/). It enables Godot projects and games to connect to Phoenix Channels to leverage the connected massive real-time capabilities of Elixir and Phoenix backends. Compatible with Godot 3.* and Godot 4.0.
 
 ## Godot 3.* and Godot 4.0
 - The master branch contains the implementation and demo for Godot 3.5+
 - The [4.0 branch](https://github.com/alfredbaudisch/GodotPhoenixChannels/tree/4.0) contains the implementation for Godot 4.0.2-stable. Support for 4.0 is untested, so please report any Issues you may come accross.
+
+## Installation
+- Install with the [Godot Asset Library](https://godotengine.org/asset-library/asset/1831).
+- Or clone/download this repository `git clone https://github.com/alfredbaudisch/GodotPhoenixChannels`.
 
 ## Introduction
 Before diving in, if you want to see some crazy numbers about the scalability of Phoenix, check [The Road to 2 Million Websocket Connections in Phoenix](https://phoenixframework.org/blog/the-road-to-2-million-websocket-connections) and [How Discord Scaled Elixir to 5,000,000 Concurrent Users](https://blog.discordapp.com/scaling-elixir-f9b8e1e7c29b).
@@ -42,12 +52,12 @@ Almost every feature from the JS official client are implemented:
 
 ## Example Godot Project
 
-- For usage examples see the [Demo](./Demo) project.
+- For usage examples see the demo repository project: [https://github.com/alfredbaudisch/GodotPhoenixChannels-Demo](https://github.com/alfredbaudisch/GodotPhoenixChannels-Demo).
 - [Godello](https://github.com/alfredbaudisch/Godello) is a complex project made with Godot, GDScript and Elixir, and uses this library.
 
 ## Example Elixir Project
 
-A simple Elixir server is available in [Demo/Server](./Demo/server).
+A simple Elixir server is available in [Demo/Server](https://github.com/alfredbaudisch/GodotPhoenixChannels-Demo/Demo/Server) in the demo repository.
 
 To run it, have Elixir installed, then:
 ```
