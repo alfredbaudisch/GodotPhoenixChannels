@@ -18,16 +18,16 @@ func _run_utils_tests():
 	test(url == result)
 	
 	result = PhoenixUtils.add_url_params(url + "/", {foo = true})
-	test(result == url + "/?foo=True")
+	test(result == url + "/?foo=true")
 	
 	result = PhoenixUtils.add_url_params(url + "/?param=random&", {foo = true})
-	test(result == url + "/?param=random&foo=True")
+	test(result == url + "/?param=random&foo=true")
 	
 	result = PhoenixUtils.add_url_params(url, {foo = true})
-	test(result == url + "?foo=True")
+	test(result == url + "?foo=true")
 	
-	result = PhoenixUtils.add_url_params(result, {bar = "baz", "number"= 12.5})
-	test(result == url + "?foo=True&bar=baz&number=12.5")
+	result = PhoenixUtils.add_url_params(result, {bar = "baz", "number" = 12.5})
+	test(result == url + "?foo=true&bar=baz&number=12.5")
 	
 	var mapped := []
 	mapped = PhoenixUtils.map(Callable(self, "get_dict_ref"), [{ref = "1", foo = "bar"}, {ref = "godot"}])
