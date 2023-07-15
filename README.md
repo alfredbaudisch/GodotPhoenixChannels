@@ -64,7 +64,7 @@ Almost every feature from the JS official client are implemented:
 
 ## Example Elixir Project
 
-A simple Elixir server is available in [Demo/Server](https://github.com/alfredbaudisch/GodotPhoenixChannels-Demo/Demo/Server) in the demo repository.
+A simple Elixir server is available in [Demo/server](https://github.com/alfredbaudisch/GodotPhoenixChannels-Demo/tree/master/Demo/server) in the demo repository.
 
 To run it, have Elixir installed, then:
 ```
