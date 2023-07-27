@@ -67,6 +67,7 @@ func _init(endpoint,opts = {}):
 		timeout = PhoenixUtils.get_key_or_default(opts, "timeout", DEFAULT_TIMEOUT_MS),
 		reconnect_after = PhoenixUtils.get_key_or_default(opts, "reconnect_after", DEFAULT_RECONNECT_AFTER_MS),
 		params = PhoenixUtils.get_key_or_default(opts, "params", {}),
+		tls_options = PhoenixUtils.get_key_or_default(opts, "tls_options", null)
 	}
 	
 	set_endpoint(endpoint)	
@@ -142,7 +143,11 @@ func connect_socket():
 		return
 	
 	_endpoint_url = PhoenixUtils.add_url_params(_settings.endpoint, _settings.params)
-	_socket.connect_to_url(_endpoint_url)
+	
+	if _settings.tls_options:
+		_socket.connect_to_url(_endpoint_url, _settings.tls_options)
+	else:
+		_socket.connect_to_url(_endpoint_url)
 	
 func disconnect_socket():	
 	_close(true, {message = "disconnect requested"})
